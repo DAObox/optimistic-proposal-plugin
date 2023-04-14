@@ -14,9 +14,9 @@ enum DisputeStatus {
   Resolved // The dispute has been resolved.
 }
 
-/// @title OptimisticProposalStatus
+/// @title ProposalStatus
 /// @dev Represents the status of an optimistic proposal.
-enum OptimisticProposalStatus {
+enum ProposalStatus {
   Active, // A delayed action that is in the queue.
   Paused, // A delayed action that is being challenged.
   Cancelled, // A delayed action that has been cancelled.
@@ -25,11 +25,11 @@ enum OptimisticProposalStatus {
   Executed // A delayed action that has been executed.
 }
 
-/// @title OptimisticProposal
+/// @title Proposal
 /// @dev Represents a proposal in an optimistic governance system.
-struct OptimisticProposal {
+struct Proposal {
   DisputeStatus disputeStatus; // The status of the dispute related to the proposal.
-  OptimisticProposalStatus status; // The current status of the proposal.
+  ProposalStatus status; // The current status of the proposal.
   uint256 executionFromTime; // The earliest timestamp at which the proposal can be executed.
   uint256 pausedAtTime; // The timestamp at which the proposal was paused due to a challenge.
   uint256 disputeId; // The ID of the dispute related to the proposal.

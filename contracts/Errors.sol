@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-import {DisputeStatus, OptimisticProposalStatus, OptimisticProposal} from "./Types.sol";
+import {DisputeStatus, ProposalStatus, Proposal} from "./Types.sol";
 
 pragma solidity 0.8.17;
 
@@ -48,9 +48,9 @@ contract Errors {
   /// @notice ProposalNotActive
   /// @dev Indicates that the proposal is not in an active state.
   /// @param status The current status of the proposal.
-  error ProposalNotActive(OptimisticProposalStatus status);
+  error ProposalNotActive(ProposalStatus status);
 
-  error ProposalNotPaused(OptimisticProposalStatus status);
+  error ProposalNotPaused(ProposalStatus status);
 
   /// @notice InsufficientArbitrationFee
   /// @dev Indicates that the fee provided for arbitration is insufficient.
@@ -63,7 +63,7 @@ contract Errors {
   /// @param currentTime The current timestamp.
   /// @param executionFromTime The earliest timestamp at which the proposal can be executed.
   /// @param status The current status of the proposal.
-  error ProposalNotExecutable(uint256 currentTime, uint256 executionFromTime, OptimisticProposalStatus status);
+  error ProposalNotExecutable(uint256 currentTime, uint256 executionFromTime, ProposalStatus status);
 
   /// @notice InsufficientCollateralToWithdraw
   /// @dev Indicates that the proposer does not have enough collateral to withdraw the requested amount.
