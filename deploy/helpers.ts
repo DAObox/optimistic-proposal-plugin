@@ -29,18 +29,21 @@ export async function newPluginRepo({
   buildMetadataCid = "",
   releaseMetadataCid = "",
 }: NewPluginRepoParams) {
-  const repoFactory = PluginRepoFactory__factory.connect(
-    activeContractsList[networkName as keyof ContractAddresses]
-      .PluginRepoFactory,
-    signer
-  );
+  console.log(networkName);
 
-  const pluginRepoRegistry: PluginRepoRegistry =
-    PluginRepoRegistry__factory.connect(
-      activeContractsList[networkName as keyof ContractAddresses]
-        .PluginRepoRegistry,
-      signer
-    );
+  const repoFactoryAddress =
+    networkName === "hardhat"
+      ? activeContractsList["mainnet"].PluginRepoFactory
+      : activeContractsList[networkName as keyof ContractAddresses].PluginRepoFactory;
+
+  const repoFactory = PluginRepoFactory__factory.connect(repoFactoryAddress, signer);
+
+  const pluginRepoRegistryAddress =
+    networkName === "hardhat"
+      ? activeContractsList["mainnet"].PluginRepoRegistry
+      : activeContractsList[networkName as keyof ContractAddresses].PluginRepoRegistry;
+
+  const pluginRepoRegistry = PluginRepoRegistry__factory.connect(pluginRepoRegistryAddress, signer);
 
   const filter = pluginRepoRegistry.filters.PluginRepoRegistered();
 
@@ -48,9 +51,7 @@ export async function newPluginRepo({
     pluginRepoRegistry.on(filter, (eventSubdomain, pluginRepoAddress) => {
       // console.log(eventSubdomain, subdomain, pluginRepoAddress);
       if (eventSubdomain === subdomain) {
-        console.log(
-          `Generated repo contract address for ${eventSubdomain}: ${pluginRepoAddress}`
-        );
+        console.log(`Generated repo contract address for ${eventSubdomain}: ${pluginRepoAddress}`);
         process.exit(0);
       }
     });

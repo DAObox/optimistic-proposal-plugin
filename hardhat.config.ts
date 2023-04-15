@@ -13,9 +13,7 @@ dotenv.config();
 const ETH_KEY = process.env.ETH_KEY;
 const accounts = ETH_KEY ? ETH_KEY.split(",") : [];
 
-const networks = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "./networks.json"), "utf8")
-);
+const networks = JSON.parse(fs.readFileSync(path.join(__dirname, "./networks.json"), "utf8"));
 
 // add accounts to network configs
 for (const network of Object.keys(networks)) {
@@ -45,7 +43,7 @@ const config = {
       throwOnTransactionFailures: true,
       throwOnCallFailures: true,
       blockGasLimit: 3000000000, // really high to test some things that are only possible with a higher block gas limit
-      gasPrice: 8000000000,
+      gasPrice: 36644086458,
     },
     ...networks,
   },
