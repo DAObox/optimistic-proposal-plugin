@@ -1,0 +1,16 @@
+{
+  "ui": "",
+  "change": "Initial build.",
+  "pluginSetupABI": {
+    "prepareInstallation": [
+      "uint256 number",
+      "IArbitrator arbitrator",
+      "uint256 executionDelay",
+      "uint256 proposalCollateral",
+      "string metaEvidence",
+      "bytes arbitratorExtraData"
+    ],
+    "prepareUpdate": [],
+    "prepareUninstallation": ["IArbitrator arbitrator"]
+  }
+}
