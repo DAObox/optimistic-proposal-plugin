@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.10;
 
 import "./IArbitrator.sol";
 
@@ -33,10 +33,12 @@ interface IArbitrable {
         uint _evidenceGroupID
     );
 
-    /** @dev To be raised when evidence are submitted. Should point to the ressource (evidences are not to be stored on chain due to gas considerations).
+    /** @dev To be raised when evidence are submitted. Should point to the ressource (evidences are not to
+     *       be stored on chain due to gas considerations).
      *  @param _arbitrator The arbitrator of the contract.
      *  @param _evidenceGroupID Unique identifier of the evidence group the evidence belongs to.
-     *  @param _party The address of the party submiting the evidence. Note that 0x0 refers to evidence not submitted by any party.
+     *  @param _party The address of the party submiting the evidence. Note that 0x0 refers to evidence
+     *         not submitted by any party.
      *  @param _evidence A URI to the evidence JSON file whose name should be its keccak256 hash followed by .json.
      */
     event Evidence(
@@ -56,7 +58,8 @@ interface IArbitrable {
     /** @dev Give a ruling for a dispute. Must be called by the arbitrator.
      *  The purpose of this function is to ensure that the address calling it has the right to rule on the contract.
      *  @param _disputeID ID of the dispute in the IArbitrator contract.
-     *  @param _ruling Ruling given by the arbitrator. Note that 0 is reserved for "Not able/wanting to make a decision".
+     *  @param _ruling Ruling given by the arbitrator. Note that 0 is reserved for
+     *         "Not able/wanting to make a decision".
      */
     function rule(uint _disputeID, uint _ruling) external;
 }
