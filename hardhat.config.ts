@@ -16,6 +16,7 @@ import 'solidity-coverage';
 
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || './.env';
 dotenvConfig({path: resolve(__dirname, dotenvConfigPath)});
+import './tasks/index';
 
 if (!process.env.INFURA_API_KEY) {
   throw new Error('INFURA_API_KEY in .env not set');
