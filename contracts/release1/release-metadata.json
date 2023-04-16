@@ -1,0 +1,5 @@
+{
+  "name": "OptimisticProposalPlugin",
+  "description": "A plugin that manages and executes Optimistic Proposals for an Aragon OSx DAO.",
+  "images": {}
+}
