@@ -1,5 +1,3 @@
-import {activeContractsList} from '@aragon/osx-ethers';
-
 export const SUBGRAPH_API_URL: {[key: number]: string} = {
   1: 'https://subgraph.satsuma-prod.com/qHR2wGfc5RLi6/aragon/osx-mainnet/api',
   5: 'https://subgraph.satsuma-prod.com/qHR2wGfc5RLi6/aragon/osx-goerli/version/v1.0.0/api',
