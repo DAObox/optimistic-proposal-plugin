@@ -2,10 +2,10 @@ import {Web3Storage, File} from 'web3.storage';
 import {config as dotenvConfig} from 'dotenv';
 dotenvConfig();
 
-export async function uploadToIPFS(json) {
+export async function uploadToIPFS(json: object) {
   // Create a Web3Storage client instance
   const client = new Web3Storage({
-    token: process.env.WEB_3_STORAGE_KEY!,
+    token: process.env.WEB_3_STORAGE_KEY as string,
   });
 
   // Convert the JSON object to a string and then to a Buffer
