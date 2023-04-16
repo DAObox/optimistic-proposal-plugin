@@ -14,12 +14,6 @@ interface IArbitrableProposal is IArbitrable {
     /// @param value The new value of the parameter.
     event UpdateParameters(bytes32 what, bytes value);
 
-    /// @dev Emitted when a new proposal is created.
-    /// @param proposalId The ID of the newly created proposal.
-    /// @param proposer The address of the proposer.
-    /// @param metadata The metadata associated with the proposal.
-    event ProposalCreated(uint256 proposalId, address proposer, bytes metadata);
-
     /// @dev Emitted when a party has to pay a fee.
     /// @param party The address of the party.
     event HasToPayFee(address party);
