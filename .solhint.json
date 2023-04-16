@@ -4,7 +4,7 @@
   "rules": {
     "no-global-import": "off",
     "func-name-mixedcase": "off",
-    "code-complexity": ["warn", 8],
+    "code-complexity": ["warn", 11],
     "compiler-version": ["error", ">=0.8.4"],
     "func-visibility": ["error", {"ignoreConstructors": true}],
     "max-line-length": ["error", 120],
