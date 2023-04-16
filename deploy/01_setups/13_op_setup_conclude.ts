@@ -1,6 +1,6 @@
 import {
-  SimpleStorageR1B1Setup__factory,
-  SimpleStorageR1B1__factory,
+  OptimisticProposalSetup__factory,
+  OptimisticProposalPlugin__factory,
 } from '../../typechain';
 import {DeployFunction} from 'hardhat-deploy/types';
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
@@ -13,11 +13,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, network} = hre;
 
   const setupDeployment = await deployments.get('OptimisticProposalSetup');
-  const setup = SimpleStorageR1B1Setup__factory.connect(
+  const setup = OptimisticProposalSetup__factory.connect(
     setupDeployment.address,
     deployer
   );
-  const implementation = SimpleStorageR1B1__factory.connect(
+  const implementation = OptimisticProposalPlugin__factory.connect(
     await setup.implementation(),
     deployer
   );
