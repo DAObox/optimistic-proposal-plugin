@@ -11,7 +11,7 @@ import {ArbitrableProposal} from "./base/ArbitrableProposal.sol";
 /// @title OptimisticProposalPlugin
 /// @author Aaron Abu Usama (@pythonpete32)
 /// @notice A plugin that manages and executes Optimistic Proposals for an Aragon OSx DAO.
-contract OptimisticProposalPlugin is ArbitrableProposal, PluginUUPSUpgradeable {
+contract OptimisticProposalPlugin is ArbitrableProposal, IMembership, PluginUUPSUpgradeable {
     /// @notice The ID of the permission required to call the `rule` function.
     bytes32 public constant RULE_PERMISSION_ID = keccak256("RULE_PERMISSION");
 
@@ -20,7 +20,7 @@ contract OptimisticProposalPlugin is ArbitrableProposal, PluginUUPSUpgradeable {
 
     /// @notice The ID of the permission required to call the `file` function.
     bytes32 public constant CONFIGURE_PARAMETERS_PERMISSION_ID =
-        keccak256("CONFIGURE_PARAMETERS_PERMISSION_");
+        keccak256("CONFIGURE_PARAMETERS_PERMISSION");
 
     /// @notice Initializes the component.
     /// @dev This method is required to support [ERC-1822](https://eips.ethereum.org/EIPS/eip-1822).
@@ -44,6 +44,12 @@ contract OptimisticProposalPlugin is ArbitrableProposal, PluginUUPSUpgradeable {
         );
     }
 
+    /// @notice Updates the contract state based on the provided key and value (`what`, `value`)
+    /// @dev This function is used to update various parameters of the contract such as executionDelay,
+    ///      arbitrator, proposalCollateral, metaEvidence, and arbitratorExtraData.
+    ///      It requires CONFIGURE_PARAMETERS_PERMISSION_ID authorization.
+    /// @param what The key of the parameter to be updated
+    /// @param value The new value of the parameter in bytes
     function updateState(
         bytes32 what,
         bytes calldata value
@@ -51,6 +57,12 @@ contract OptimisticProposalPlugin is ArbitrableProposal, PluginUUPSUpgradeable {
         _updateState(what, value);
     }
 
+    /// @notice Creates a new arbitrable proposal with the provided metadata, actions, and allow failure map
+    ///         (`_metadata`, `_actions`, `_allowFailureMap`)
+    /// @dev This function creates a new proposal and requires CREATE_PROPOSAL_PERMISSION_ID authorization.
+    /// @param _metadata The metadata of the proposal in bytes
+    /// @param _actions An array of actions to be executed by the proposal
+    /// @param _allowFailureMap A bitmap representing which actions are allowed to fail during proposal execution
     function createProposal(
         bytes calldata _metadata,
         IDAO.Action[] calldata _actions,
@@ -59,6 +71,10 @@ contract OptimisticProposalPlugin is ArbitrableProposal, PluginUUPSUpgradeable {
         _createArbitrableProposal(_metadata, _actions, _allowFailureMap);
     }
 
+    /// @notice Provides a ruling for the specified dispute with the given ruling value (`_disputeID`, `_ruling`)
+    /// @dev This function requires RULE_PERMISSION_ID authorization and provides a ruling for the given dispute.
+    /// @param _disputeID The ID of the dispute to rule on
+    /// @param _ruling The ruling value to be applied to the dispute
     function rule(uint256 _disputeID, uint256 _ruling) external auth(RULE_PERMISSION_ID) {
         _rule(_disputeID, _ruling);
     }
@@ -67,6 +83,7 @@ contract OptimisticProposalPlugin is ArbitrableProposal, PluginUUPSUpgradeable {
     ///                                 IMembership                              ///
     ///--------------------------------------------------------------------------///
 
+    /// @inheritdoc IMembership
     function isMember(address _account) external view returns (bool) {
         return
             dao().hasPermission({
