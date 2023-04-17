@@ -1,6 +1,7 @@
 {
   "goerli": {
     "OptimisticProposalSetup": "0x61f7B5B849fa5B5eF2d63d24eb07ff3274f5bFDc",
-    "PluginRepo": "0xC91fF79540834575B10515861cC9e350bf0ee1EA"
+    "PluginRepo": "0xC91fF79540834575B10515861cC9e350bf0ee1EA",
+    "CentralizedArbitrator": "0x3699A8DD940DE8102629AEcF18B3b148fAeB39A6"
   }
 }

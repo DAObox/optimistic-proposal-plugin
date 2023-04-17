@@ -31,6 +31,7 @@ contract OptimisticProposalSetup is PluginSetup {
     ) external returns (address plugin, PreparedSetupData memory preparedSetupData) {
         // Decode `_data` to extract the params needed for deploying and initializing `OptimisticProposalPlugin` plugin,
         // and the required helpers
+        // 1. extract the arguments
         (
             IArbitrator arbitrator,
             uint256 executionDelay,
@@ -39,7 +40,7 @@ contract OptimisticProposalSetup is PluginSetup {
             bytes memory arbitratorExtraData
         ) = abi.decode(_data, (IArbitrator, uint256, uint256, string, bytes));
 
-        // Prepare and deploy plugin proxy.
+        // 2. Prepare and deploy plugin proxy.
         plugin = createERC1967Proxy(
             address(optimisticProposals),
             abi.encodeWithSelector(
@@ -53,40 +54,40 @@ contract OptimisticProposalSetup is PluginSetup {
             )
         );
 
-        // Prepare permissions
+        // 3. Prepare permissions
         PermissionLib.MultiTargetPermission[]
             memory permissions = new PermissionLib.MultiTargetPermission[](4);
 
         // Revoke the Arbitrator contract `RULE_PERMISSION_ID` of the plugin.
         permissions[0] = PermissionLib.MultiTargetPermission(
-            PermissionLib.Operation.Revoke,
+            PermissionLib.Operation.Grant,
             plugin,
             address(arbitrator),
             PermissionLib.NO_CONDITION,
             optimisticProposals.RULE_PERMISSION_ID()
         );
 
-        // Revoke the DAO contract `CREATE_PROPOSAL_PERMISSION_ID` of the plugin.
+        // Grant the DAO contract `CREATE_PROPOSAL_PERMISSION_ID` of the plugin.
         permissions[1] = PermissionLib.MultiTargetPermission(
-            PermissionLib.Operation.Revoke,
+            PermissionLib.Operation.Grant,
             plugin,
             address(_dao),
             PermissionLib.NO_CONDITION,
             optimisticProposals.CREATE_PROPOSAL_PERMISSION_ID()
         );
 
-        // Revoke the DAO contract `CONFIGURE_PARAMETERS_PERMISSION_ID` of the plugin.
+        // Grant the DAO contract `CONFIGURE_PARAMETERS_PERMISSION_ID` of the plugin.
         permissions[2] = PermissionLib.MultiTargetPermission(
-            PermissionLib.Operation.Revoke,
+            PermissionLib.Operation.Grant,
             plugin,
             address(_dao),
             PermissionLib.NO_CONDITION,
             optimisticProposals.CONFIGURE_PARAMETERS_PERMISSION_ID()
         );
 
-        // Revoke `EXECUTE_PERMISSION` of the DAO to the plugin.
+        // Grant `EXECUTE_PERMISSION` of the DAO to the plugin.
         permissions[3] = PermissionLib.MultiTargetPermission(
-            PermissionLib.Operation.Revoke,
+            PermissionLib.Operation.Grant,
             _dao,
             plugin,
             PermissionLib.NO_CONDITION,
@@ -103,38 +104,39 @@ contract OptimisticProposalSetup is PluginSetup {
     ) external view returns (PermissionLib.MultiTargetPermission[] memory permissions) {
         // Prepare permissions.
 
-        permissions = new PermissionLib.MultiTargetPermission[](3);
+        permissions = new PermissionLib.MultiTargetPermission[](4);
+        address arbitrator = _payload.currentHelpers[0];
 
-        // Grant the Arbitrator contract `RULE_PERMISSION_ID` of the plugin.
-        // permissions[0] = PermissionLib.MultiTargetPermission(
-        //   PermissionLib.Operation.Grant,
-        //   _payload.plugin,
-        //   arbitrator,
-        //   PermissionLib.NO_CONDITION,
-        //   optimisticProposals.RULE_PERMISSION_ID()
-        // );
-
-        // Grant the DAO contract `CREATE_PROPOSAL_PERMISSION_ID` of the plugin.
+        // Revoke the Arbitrator contract `RULE_PERMISSION_ID` of the plugin.
         permissions[0] = PermissionLib.MultiTargetPermission(
-            PermissionLib.Operation.Grant,
+            PermissionLib.Operation.Revoke,
+            _payload.plugin,
+            arbitrator,
+            PermissionLib.NO_CONDITION,
+            optimisticProposals.RULE_PERMISSION_ID()
+        );
+
+        // Revoke the DAO contract `CREATE_PROPOSAL_PERMISSION_ID` of the plugin.
+        permissions[1] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Revoke,
             _payload.plugin,
             address(_dao),
             PermissionLib.NO_CONDITION,
             optimisticProposals.CREATE_PROPOSAL_PERMISSION_ID()
         );
 
-        // Grant the DAO contract `CONFIGURE_PARAMETERS_PERMISSION_ID` of the plugin.
-        permissions[1] = PermissionLib.MultiTargetPermission(
-            PermissionLib.Operation.Grant,
+        // Revoke the DAO contract `CONFIGURE_PARAMETERS_PERMISSION_ID` of the plugin.
+        permissions[2] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Revoke,
             _payload.plugin,
             address(_dao),
             PermissionLib.NO_CONDITION,
             optimisticProposals.CONFIGURE_PARAMETERS_PERMISSION_ID()
         );
 
-        // Grant `EXECUTE_PERMISSION` of the DAO to the plugin.
-        permissions[2] = PermissionLib.MultiTargetPermission(
-            PermissionLib.Operation.Grant,
+        // Revoke `EXECUTE_PERMISSION` of the DAO to the plugin.
+        permissions[3] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Revoke,
             _dao,
             _payload.plugin,
             PermissionLib.NO_CONDITION,

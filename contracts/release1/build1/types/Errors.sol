@@ -78,14 +78,32 @@ error InsufficientCollateralToWithdraw(
 /// @notice Emitted when attempting to deposit zero collateral, which is not allowed.
 error ZeroCollateralDeposit();
 
+/// @notice Emitted when a dispute has already been created for a proposal
+/// @param disputeId The ID of the dispute that has already been created
+/// @param proposalId The ID of the proposal for which the dispute is created
 error DisputeAlreadyCreated(uint256 disputeId, uint256 proposalId);
 
+/// @notice Emitted when the caller is not the proposer or challenger of a dispute
+/// @param proposer The address of the proposer
+/// @param challenger The address of the challenger
+/// @param caller The address of the caller who is not the proposer or challenger
 error NotProposerOrChallenger(address proposer, address challenger, address caller);
 
+/// @notice Emitted when submitting evidence is not allowed due to dispute status
+/// @param disputeStatus The current status of the dispute
 error CanNotSubmitEvidence(DisputeStatus disputeStatus);
 
+/// @notice Emitted when a proposal update is invalid
+/// @param proposalId The ID of the proposal being updated
+/// @param what The key of the parameter being updated
+/// @param value The value of the parameter being updated
 error InvalidProposalUpdate(uint256 proposalId, bytes32 what, bytes value);
 
+/// @notice Emitted when an invalid ruling is encountered
+/// @param ruling The invalid ruling value
 error InvalidRuling(uint256 ruling);
 
+/// @notice Emitted when the collateral provided is insufficient
+/// @param requested The amount of collateral requested
+/// @param available The amount of collateral available
 error InsufficientCollateral(uint256 requested, uint256 available);

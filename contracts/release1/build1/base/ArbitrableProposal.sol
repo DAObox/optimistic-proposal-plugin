@@ -49,6 +49,12 @@ abstract contract ArbitrableProposal is IArbitrableProposal, Proposals, Initiali
     /// @notice metaEvidence Link to the meta=evidence.
     string public metaEvidence;
 
+    /// @notice Updates the contract state based on the provided key and value
+    /// @dev This function is used to update various parameters of the contract
+    ///      such as executionDelay, arbitrator, proposalCollateral, metaEvidence,
+    ///      and arbitratorExtraData.
+    /// @param what The key of the parameter to be updated
+    /// @param value The new value of the parameter in bytes
     function _updateState(bytes32 what, bytes calldata value) internal {
         if (what == "executionDelay") executionDelay = abi.decode(value, (uint256));
         else if (what == "arbitrator") arbitrator = IArbitrator(abi.decode(value, (address)));
