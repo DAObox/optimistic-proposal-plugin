@@ -1,9 +1,9 @@
-import buildMetadata1 from '../../contracts/release1/build1/build-metadata.json';
+import buildMetadata from '../../contracts/build-metadata.json';
 import {
   DAO,
-  SimpleStorageR1B1Setup,
-  SimpleStorageR1B1Setup__factory,
-  SimpleStorageR1B1__factory,
+  OptimisticProposalSetup,
+  OptimisticProposalSetup__factory,
+  OptimisticProposalPlugin__factory,
 } from '../../typechain';
 import {deployTestDao} from '../helpers/test-dao';
 import {Operation} from '../helpers/types';
@@ -11,26 +11,26 @@ import {
   ADDRESS_ZERO,
   EMPTY_DATA,
   NO_CONDITION,
-  STORE_PERMISSION_ID,
+  RULE_PERMISSION_ID,
   abiCoder,
-} from './simple-storage-common';
-import {defaultInputR1B1} from './simple-stroage-r1b1';
+} from './common';
+import {defaultInput} from './optimistic-proposal-plugin';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {expect} from 'chai';
 import {ethers} from 'hardhat';
 
-describe('SimpleStorageR1B1Setup', function () {
+describe('Optimistic Proposal Setup', function () {
   let signers: SignerWithAddress[];
-  let simpleStorageR1B1Setup: SimpleStorageR1B1Setup;
-  let SimpleStorageR1B1Setup: SimpleStorageR1B1Setup__factory;
+  let op_setup: OptimisticProposalSetup;
+  let op_setup_factory: OptimisticProposalSetup__factory;
   let dao: DAO;
 
   before(async () => {
     signers = await ethers.getSigners();
     dao = await deployTestDao(signers[0]);
 
-    SimpleStorageR1B1Setup = new SimpleStorageR1B1Setup__factory(signers[0]);
-    simpleStorageR1B1Setup = await SimpleStorageR1B1Setup.deploy();
+    op_setup_factory = new OptimisticProposalSetup__factory(signers[0]);
+    op_setup = await op_setup_factory.deploy();
   });
 
   describe('prepareInstallation', async () => {
@@ -38,27 +38,22 @@ describe('SimpleStorageR1B1Setup', function () {
 
     before(async () => {
       initData = abiCoder.encode(
-        buildMetadata1.pluginSetupABI.prepareInstallation,
-        [defaultInputR1B1.number]
+        buildMetadata.pluginSetupABI.prepareInstallation,
+        [defaultInput.number]
       );
     });
 
     it('returns the plugin, helpers, and permissions', async () => {
-      const nonce = await ethers.provider.getTransactionCount(
-        simpleStorageR1B1Setup.address
-      );
+      const nonce = await ethers.provider.getTransactionCount(op_setup.address);
       const anticipatedPluginAddress = ethers.utils.getContractAddress({
-        from: simpleStorageR1B1Setup.address,
+        from: op_setup.address,
         nonce,
       });
 
       const {
         plugin,
         preparedSetupData: {helpers, permissions},
-      } = await simpleStorageR1B1Setup.callStatic.prepareInstallation(
-        dao.address,
-        initData
-      );
+      } = await op_setup.callStatic.prepareInstallation(dao.address, initData);
 
       expect(plugin).to.be.equal(anticipatedPluginAddress);
       expect(helpers.length).to.be.equal(0);
@@ -69,20 +64,17 @@ describe('SimpleStorageR1B1Setup', function () {
           plugin,
           dao.address,
           NO_CONDITION,
-          STORE_PERMISSION_ID,
+          RULE_PERMISSION_ID,
         ],
       ]);
 
-      await simpleStorageR1B1Setup.prepareInstallation(dao.address, initData);
-      const simpleStorageR1B1 = new SimpleStorageR1B1__factory(
+      await op_setup.prepareInstallation(dao.address, initData);
+      const op_setup_factory = new OptimisticProposalPlugin__factory(
         signers[0]
       ).attach(plugin);
 
       // initialization is correct
-      expect(await simpleStorageR1B1.dao()).to.eq(dao.address);
-      expect(await simpleStorageR1B1.number()).to.be.eq(
-        defaultInputR1B1.number
-      );
+      expect(await op_setup_factory.dao()).to.eq(dao.address);
     });
   });
 
@@ -90,15 +82,14 @@ describe('SimpleStorageR1B1Setup', function () {
     it('returns the permissions', async () => {
       const dummyAddr = ADDRESS_ZERO;
 
-      const permissions =
-        await simpleStorageR1B1Setup.callStatic.prepareUninstallation(
-          dao.address,
-          {
-            plugin: dummyAddr,
-            currentHelpers: [],
-            data: EMPTY_DATA,
-          }
-        );
+      const permissions = await op_setup.callStatic.prepareUninstallation(
+        dao.address,
+        {
+          plugin: dummyAddr,
+          currentHelpers: [],
+          data: EMPTY_DATA,
+        }
+      );
 
       expect(permissions.length).to.be.equal(1);
       expect(permissions).to.deep.equal([
@@ -107,7 +98,7 @@ describe('SimpleStorageR1B1Setup', function () {
           dummyAddr,
           dao.address,
           NO_CONDITION,
-          STORE_PERMISSION_ID,
+          RULE_PERMISSION_ID,
         ],
       ]);
     });

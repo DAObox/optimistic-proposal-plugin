@@ -3,7 +3,7 @@ import {deployWithProxy} from '../../utils/helpers';
 import {
   ADDRESS_ZERO,
   EMPTY_DATA,
-} from '../simple-storage/simple-storage-common';
+} from '../plugin/common';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 
 export async function deployTestDao(signer: SignerWithAddress): Promise<DAO> {
