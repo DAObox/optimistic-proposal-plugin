@@ -23,7 +23,7 @@ export const DAYS_3 = BN(60 * 60 * 24 * 3);
 export const ARB_FEE = BN(ethers.utils.parseEther('0.069'));
 export const COLLATERAL = BN(ethers.utils.parseEther('1'));
 export const META_EVIDENCE = 'https://testing.com';
-export const EXTRA_DATA = '0x08575';
+export const EXTRA_DATA = '0x085750';
 export const INIT_ABI = ['address', 'uint256', 'uint256', 'string', 'bytes'];
 export const INIT_PARAMS = [
   DAYS_3.toString(),

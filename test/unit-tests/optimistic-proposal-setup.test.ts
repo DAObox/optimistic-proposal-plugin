@@ -1,3 +1,4 @@
+import {beforeEach} from 'mocha';
 import {
   DAO,
   OptimisticProposalSetup,
@@ -9,11 +10,13 @@ import {
 import {deployTestDao} from '../helpers/test-dao';
 import {Operation} from '../helpers/types';
 import {
+  ADDRESS_ZERO,
   ARB_FEE,
   COLLATERAL,
   CONFIGURE_PARAMETERS_PERMISSION_ID,
   CREATE_PROPOSAL_PERMISSION_ID,
   DAYS_3,
+  EMPTY_DATA,
   EXECUTE_PERMISSION_ID,
   EXTRA_DATA,
   INIT_ABI,
@@ -34,6 +37,8 @@ describe('OptimisticProposalSetup', function () {
   let opSetup: OptimisticProposalSetup;
   let Arbitraror: CentralizedArbitrator__factory;
   let arbitrator: CentralizedArbitrator;
+
+  let initParams: string[];
   let dao: DAO;
 
   before(async () => {
@@ -42,17 +47,26 @@ describe('OptimisticProposalSetup', function () {
 
     OPSetup = new OptimisticProposalSetup__factory(signers[0]);
     opSetup = await OPSetup.deploy();
+    opSetup.deployed();
 
     Arbitraror = new CentralizedArbitrator__factory(signers[0]);
     arbitrator = await Arbitraror.deploy(ARB_FEE);
+    arbitrator.deployed();
+    initParams = [
+      arbitrator.address,
+      DAYS_3.toString(),
+      COLLATERAL.toString(),
+      META_EVIDENCE,
+      EXTRA_DATA,
+    ];
+    console.log('initParams', initParams);
   });
 
   describe('prepareInstallation', async () => {
     let initData: string;
-    const initParams = [arbitrator.address, ...INIT_PARAMS];
-
     before(async () => {
-      initData = abiCoder.encode(initParams, INIT_ABI);
+      console.log('INIT_ABI', INIT_ABI);
+      initData = abiCoder.encode(INIT_ABI, initParams);
     });
 
     it('returns the plugin, helpers, and permissions', async () => {
@@ -74,7 +88,7 @@ describe('OptimisticProposalSetup', function () {
         [
           Operation.Grant,
           plugin,
-          dao.address,
+          arbitrator.address,
           NO_CONDITION,
           RULE_PERMISSION_ID,
         ],
@@ -114,7 +128,26 @@ describe('OptimisticProposalSetup', function () {
       expect(await opPlugin.arbitratorExtraData()).to.be.eq(EXTRA_DATA);
       expect(await opPlugin.metaEvidence()).to.be.eq(META_EVIDENCE);
     });
+    it('this should work but dosnt', async () => {
+      expect(0).equal(0);
+    });
   });
+
+  // describe('testDescribe', async () => {
+  //   let initData: string;
+  //   const initParams = [
+  //     '0x47d80912400ef8f8224531EBEB1ce8f2ACf4b75a',
+  //     ...INIT_PARAMS,
+  //   ];
+
+  //   before(async () => {
+  //     initData = abiCoder.encode(initParams, INIT_ABI);
+  //   });
+
+  //   it('mock1', async () => {
+  //     expect(0).equal(0);
+  //   });
+  // });
 
   // describe('prepareUninstallation', async () => {
   //   it('returns the permissions', async () => {
@@ -136,7 +169,7 @@ describe('OptimisticProposalSetup', function () {
   //         dummyAddr,
   //         dao.address,
   //         NO_CONDITION,
-  //         STORE_PERMISSION_ID,
+  //         RULE_PERMISSION_ID,
   //       ],
   //     ]);
   //   });
