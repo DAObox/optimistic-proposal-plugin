@@ -8,12 +8,13 @@ import {config as dotenvConfig} from 'dotenv';
 import {BigNumber} from 'ethers';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
-import {extendEnvironment, HardhatUserConfig} from 'hardhat/config';
+import {extendEnvironment, HardhatUserConfig, task} from 'hardhat/config';
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import type {NetworkUserConfig} from 'hardhat/types';
 import {resolve} from 'path';
 import 'solidity-coverage';
 
+import './tasks/index';
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || './.env';
 dotenvConfig({path: resolve(__dirname, dotenvConfigPath)});
 
