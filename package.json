@@ -60,7 +60,6 @@
     "@openzeppelin/contracts-upgradeable": "^4.8.2",
     "@openzeppelin/hardhat-upgrades": "^1.21.0",
     "listr": "^0.14.3",
-    "ora": "^6.3.0",
     "picocolors": "^1.0.0",
     "web3.storage": "^4.5.4"
   },
