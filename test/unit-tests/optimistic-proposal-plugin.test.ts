@@ -30,6 +30,10 @@ import {deployWithProxy} from '../../utils/helpers';
 
 describe('OptimisticProposalPlugin', () => {
   let signers: SignerWithAddress[];
+  let deployer: SignerWithAddress;
+  let proposer: SignerWithAddress;
+  let challenger: SignerWithAddress;
+  let admin: SignerWithAddress;
   let dao: DAO;
   let OPPluginFactory: OptimisticProposalPlugin__factory;
   let opPlugin: OptimisticProposalPlugin;
@@ -38,12 +42,24 @@ describe('OptimisticProposalPlugin', () => {
 
   before(async () => {
     signers = await ethers.getSigners();
-    dao = await deployTestDao(signers[0]);
+    deployer = signers[0];
+    proposer = signers[1];
+    challenger = signers[2];
+    admin = signers[3];
 
-    Arbitraror = new CentralizedArbitrator__factory(signers[0]);
+    console.log({
+      deployer: deployer.address,
+      proposer: proposer.address,
+      challenger: challenger.address,
+      admin: admin.address,
+    });
+
+    dao = await deployTestDao(deployer);
+
+    Arbitraror = new CentralizedArbitrator__factory(deployer);
     arbitrator = await Arbitraror.deploy(ARB_FEE);
     arbitrator.deployed();
-    OPPluginFactory = new OptimisticProposalPlugin__factory(signers[0]);
+    OPPluginFactory = new OptimisticProposalPlugin__factory(deployer);
   });
 
   beforeEach(async () => {
@@ -93,158 +109,179 @@ describe('OptimisticProposalPlugin', () => {
   describe('updateState', () => {
     it('should successfully update parameters with valid values', async () => {
       // Test successful parameter update with valid values
-      expect(2 + 2).to.equal(5);
+      const newExecutionDelay = 69420;
+
+      // Grant CONFIGURE_PARAMETERS_PERMISSION_ID to admin
+      await dao.grant(
+        admin.address,
+        opPlugin.address,
+        CONFIGURE_PARAMETERS_PERMISSION_ID
+      );
+
+      // Connect the contract with the admin signer
+      const adminOpPlugin = opPlugin.connect(admin);
+
+      // Update executionDelay using the admin signer
+      const what = ethers.utils.formatBytes32String('executionDelay');
+      const value = ethers.utils.defaultAbiCoder.encode(
+        ['uint256'],
+        [newExecutionDelay]
+      );
+      await adminOpPlugin.callStatic.updateState(what, value);
+      await adminOpPlugin.updateState(what, value, {gasLimit: 1000000});
+
+      expect(await opPlugin.executionDelay()).to.equal(newExecutionDelay);
     });
 
-    it('should revert when called without CONFIGURE_PARAMETERS_PERMISSION_ID', async () => {
-      // Test revert when called without CONFIGURE_PARAMETERS_PERMISSION_ID
-      expect(2 + 2).to.equal(5);
-    });
+    // it('should revert when called without CONFIGURE_PARAMETERS_PERMISSION_ID', async () => {
+    //   // Test revert when called without CONFIGURE_PARAMETERS_PERMISSION_ID
+    //   expect(2 + 2).to.equal(5);
+    // });
 
-    it('should revert when called with invalid parameter name', async () => {
-      // Test revert when called with invalid parameter name
-      expect(2 + 2).to.equal(5);
-    });
+    // it('should revert when called with invalid parameter name', async () => {
+    //   // Test revert when called with invalid parameter name
+    //   expect(2 + 2).to.equal(5);
+    // });
   });
 
-  describe('createProposal', () => {
-    it('should successfully create a proposal with valid values', async () => {
-      // Test successful proposal creation with valid values
-      expect(2 + 2).to.equal(5);
-    });
+  // describe('createProposal', () => {
+  //   it('should successfully create a proposal with valid values', async () => {
+  //     // Test successful proposal creation with valid values
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when called without CREATE_PROPOSAL_PERMISSION_ID', async () => {
-      // Test revert when called without CREATE_PROPOSAL_PERMISSION_ID
-      expect(2 + 2).to.equal(5);
-    });
+  //   it('should revert when called without CREATE_PROPOSAL_PERMISSION_ID', async () => {
+  //     // Test revert when called without CREATE_PROPOSAL_PERMISSION_ID
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when _actions is empty', async () => {
-      // Test revert when _actions is empty
-      expect(2 + 2).to.equal(5);
-    });
+  //   it('should revert when _actions is empty', async () => {
+  //     // Test revert when _actions is empty
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when not enough collateral is provided', async () => {
-      // Test revert when not enough collateral is provided
-      expect(2 + 2).to.equal(5);
-    });
-  });
+  //   it('should revert when not enough collateral is provided', async () => {
+  //     // Test revert when not enough collateral is provided
+  //     expect(2 + 2).to.equal(5);
+  //   });
+  // });
 
-  describe('_executeArbitrableProposal', () => {
-    it('should successfully execute an active proposal', async () => {
-      // Test successful execution of an active proposal
-      expect(2 + 2).to.equal(5);
-    });
+  // describe('_executeArbitrableProposal', () => {
+  //   it('should successfully execute an active proposal', async () => {
+  //     // Test successful execution of an active proposal
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when proposal is not active', async () => {
-      // Test revert when proposal is not active
-      expect(2 + 2).to.equal(5);
-    });
+  //   it('should revert when proposal is not active', async () => {
+  //     // Test revert when proposal is not active
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when trying to execute before executionFromTime', async () => {
-      // Test revert when trying to execute before executionFromTime
-      expect(2 + 2).to.equal(5);
-    });
-  });
+  //   it('should revert when trying to execute before executionFromTime', async () => {
+  //     // Test revert when trying to execute before executionFromTime
+  //     expect(2 + 2).to.equal(5);
+  //   });
+  // });
 
-  describe('cancelProposal', () => {
-    it('should successfully cancel a proposal by proposer', async () => {
-      // Test successful proposal cancellation by proposer
-      expect(2 + 2).to.equal(5);
-    });
+  // describe('cancelProposal', () => {
+  //   it('should successfully cancel a proposal by proposer', async () => {
+  //     // Test successful proposal cancellation by proposer
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when caller is not proposer', async () => {
-      // Test revert when caller is not proposer
-      expect(2 + 2).to.equal(5);
-    });
+  //   it('should revert when caller is not proposer', async () => {
+  //     // Test revert when caller is not proposer
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when status is not Active or RuledAllowed', async () => {
-      // Test revert when status is not Active or RuledAllowed
-      expect(2 + 2).to.equal(5);
-    });
-  });
+  //   it('should revert when status is not Active or RuledAllowed', async () => {
+  //     // Test revert when status is not Active or RuledAllowed
+  //     expect(2 + 2).to.equal(5);
+  //   });
+  // });
 
-  describe('challengeProposal', () => {
-    it('should successfully challenge a proposal with valid values', async () => {
-      // Test successful proposal challenge with valid values
-      expect(2 + 2).to.equal(5);
-    });
+  // describe('challengeProposal', () => {
+  //   it('should successfully challenge a proposal with valid values', async () => {
+  //     // Test successful proposal challenge with valid values
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when proposal is not active', async () => {
-      // Test revert when proposal is not active
-      expect(2 + 2).to.equal(5);
-    });
+  //   it('should revert when proposal is not active', async () => {
+  //     // Test revert when proposal is not active
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when not enough arbitration fee is provided', async () => {
-      // Test revert when not enough arbitration fee is provided
-      expect(2 + 2).to.equal(5);
-    });
+  //   it('should revert when not enough arbitration fee is provided', async () => {
+  //     // Test revert when not enough arbitration fee is provided
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when dispute has already been created', async () => {
-      // Test revert when dispute has already been created
-      expect(2 + 2).to.equal(5);
-    });
-  });
+  //   it('should revert when dispute has already been created', async () => {
+  //     // Test revert when dispute has already been created
+  //     expect(2 + 2).to.equal(5);
+  //   });
+  // });
 
-  describe('_submitEvidence', () => {
-    it('should successfully submit evidence by proposer or challenger', async () => {
-      // Test successful evidence submission by proposer or challenger
-      expect(2 + 2).to.equal(5);
-    });
+  // describe('_submitEvidence', () => {
+  //   it('should successfully submit evidence by proposer or challenger', async () => {
+  //     // Test successful evidence submission by proposer or challenger
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when caller is not proposer or challenger', async () => {
-      // Test revert when caller is not proposer or challenger
-      expect(2 + 2).to.equal(5);
-    });
+  //   it('should revert when caller is not proposer or challenger', async () => {
+  //     // Test revert when caller is not proposer or challenger
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when dispute status is NoDispute or Resolved', async () => {
-      // Test revert when dispute status is NoDispute or Resolved
-      expect(2 + 2).to.equal(5);
-    });
-  });
+  //   it('should revert when dispute status is NoDispute or Resolved', async () => {
+  //     // Test revert when dispute status is NoDispute or Resolved
+  //     expect(2 + 2).to.equal(5);
+  //   });
+  // });
 
-  describe('_rule', () => {
-    it('should successfully rule with valid values', async () => {
-      // Test successful ruling with valid values
-      expect(2 + 2).to.equal(5);
-    });
+  // describe('_rule', () => {
+  //   it('should successfully rule with valid values', async () => {
+  //     // Test successful ruling with valid values
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when proposal is not paused', async () => {
-      // Test revert when proposal is not paused
-      expect(2 + 2).to.equal(5);
-    });
+  //   it('should revert when proposal is not paused', async () => {
+  //     // Test revert when proposal is not paused
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should revert when invalid ruling value is provided', async () => {
-      // Test revert when invalid ruling value is provided
-      expect(2 + 2).to.equal(5);
-    });
-  });
+  //   it('should revert when invalid ruling value is provided', async () => {
+  //     // Test revert when invalid ruling value is provided
+  //     expect(2 + 2).to.equal(5);
+  //   });
+  // });
 
-  describe('isMember', () => {
-    it('should correctly check for member with CREATE_PROPOSAL_PERMISSION_ID', async () => {
-      // Test successful check of member with CREATE_PROPOSAL_PERMISSION_ID
-      expect(2 + 2).to.equal(5);
-    });
+  // describe('isMember', () => {
+  //   it('should correctly check for member with CREATE_PROPOSAL_PERMISSION_ID', async () => {
+  //     // Test successful check of member with CREATE_PROPOSAL_PERMISSION_ID
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should correctly check for non-member with CREATE_PROPOSAL_PERMISSION_ID', async () => {
-      // Test non-member check with CREATE_PROPOSAL_PERMISSION_ID
-      expect(2 + 2).to.equal(5);
-    });
-  });
+  //   it('should correctly check for non-member with CREATE_PROPOSAL_PERMISSION_ID', async () => {
+  //     // Test non-member check with CREATE_PROPOSAL_PERMISSION_ID
+  //     expect(2 + 2).to.equal(5);
+  //   });
+  // });
 
-  describe('supportsInterface', () => {
-    it('should correctly support DISPUTABLE_PLUGIN_INTERFACE_ID', async () => {
-      // Test correct support for DISPUTABLE_PLUGIN_INTERFACE_ID
-      expect(2 + 2).to.equal(5);
-    });
+  // describe('supportsInterface', () => {
+  //   it('should correctly support DISPUTABLE_PLUGIN_INTERFACE_ID', async () => {
+  //     // Test correct support for DISPUTABLE_PLUGIN_INTERFACE_ID
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should correctly support IMembership interfaceId', async () => {
-      // Test correct support for IMembership interfaceId
-      expect(2 + 2).to.equal(5);
-    });
+  //   it('should correctly support IMembership interfaceId', async () => {
+  //     // Test correct support for IMembership interfaceId
+  //     expect(2 + 2).to.equal(5);
+  //   });
 
-    it('should correctly support inherited interfaces (PluginUUPSUpgradeable, Proposals)', async () => {
-      // Test correct support for inherited interfaces (PluginUUPSUpgradeable, Proposals)
-      expect(2 + 2).to.equal(5);
-    });
-  });
+  //   it('should correctly support inherited interfaces (PluginUUPSUpgradeable, Proposals)', async () => {
+  //     // Test correct support for inherited interfaces (PluginUUPSUpgradeable, Proposals)
+  //     expect(2 + 2).to.equal(5);
+  //   });
+  // });
 });
