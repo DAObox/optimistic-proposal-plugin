@@ -47,13 +47,6 @@ describe('OptimisticProposalPlugin', () => {
     challenger = signers[2];
     admin = signers[3];
 
-    console.log({
-      deployer: deployer.address,
-      proposer: proposer.address,
-      challenger: challenger.address,
-      admin: admin.address,
-    });
-
     dao = await deployTestDao(deployer);
 
     Arbitraror = new CentralizedArbitrator__factory(deployer);
@@ -107,19 +100,49 @@ describe('OptimisticProposalPlugin', () => {
   });
 
   describe('updateState', () => {
-    it('should successfully update parameters with valid values', async () => {
+    beforeEach(async () => {
+      await opPlugin.initialize(
+        dao.address,
+        arbitrator.address,
+        DAYS_3,
+        COLLATERAL,
+        META_EVIDENCE,
+        '0x123456'
+      );
+    });
+    it('should successfully update executionDelay', async () => {
       // Test successful parameter update with valid values
       const newExecutionDelay = 69420;
+      // let permission;
+      // permission = await dao.hasPermission(
+      //   admin.address,
+      //   opPlugin.address,
+      //   CONFIGURE_PARAMETERS_PERMISSION_ID,
+      //   EMPTY_DATA
+      // );
+      // console.log('before permission ', permission);
 
       // Grant CONFIGURE_PARAMETERS_PERMISSION_ID to admin
       await dao.grant(
-        admin.address,
         opPlugin.address,
+        admin.address,
         CONFIGURE_PARAMETERS_PERMISSION_ID
       );
 
+      // permission = await dao.hasPermission(
+      //   admin.address,
+      //   opPlugin.address,
+      //   CONFIGURE_PARAMETERS_PERMISSION_ID,
+      //   EMPTY_DATA
+      // );
+      // console.log('after permission', permission);
+
       // Connect the contract with the admin signer
       const adminOpPlugin = opPlugin.connect(admin);
+      // console.log('dao:           ', dao.address);
+      // console.log('opPlugin:      ', adminOpPlugin.address);
+      // console.log('admin:         ', admin.address);
+      // console.log('permission:    ', CONFIGURE_PARAMETERS_PERMISSION_ID);
 
       // Update executionDelay using the admin signer
       const what = ethers.utils.formatBytes32String('executionDelay');
@@ -127,44 +150,171 @@ describe('OptimisticProposalPlugin', () => {
         ['uint256'],
         [newExecutionDelay]
       );
-      await adminOpPlugin.callStatic.updateState(what, value);
+      // await adminOpPlugin.callStatic.updateState(what, value);
       await adminOpPlugin.updateState(what, value, {gasLimit: 1000000});
 
       expect(await opPlugin.executionDelay()).to.equal(newExecutionDelay);
     });
 
-    // it('should revert when called without CONFIGURE_PARAMETERS_PERMISSION_ID', async () => {
-    //   // Test revert when called without CONFIGURE_PARAMETERS_PERMISSION_ID
+    it('should successfully update arbitrator', async () => {
+      const newArbitrator = await Arbitraror.deploy(ARB_FEE);
+      newArbitrator.deployed();
+
+      await dao.grant(
+        opPlugin.address,
+        admin.address,
+        CONFIGURE_PARAMETERS_PERMISSION_ID
+      );
+      const adminOpPlugin = opPlugin.connect(admin);
+
+      const what = ethers.utils.formatBytes32String('arbitrator');
+      const value = ethers.utils.defaultAbiCoder.encode(
+        ['address'],
+        [newArbitrator.address]
+      );
+
+      await adminOpPlugin.updateState(what, value);
+
+      expect(await opPlugin.arbitrator()).to.equal(newArbitrator.address);
+    });
+
+    it('should successfully update proposalCollateral', async () => {
+      const newProposalCollateral = 187_000_000;
+
+      await dao.grant(
+        opPlugin.address,
+        admin.address,
+        CONFIGURE_PARAMETERS_PERMISSION_ID
+      );
+      const adminOpPlugin = opPlugin.connect(admin);
+
+      const what = ethers.utils.formatBytes32String('proposalCollateral');
+      const value = ethers.utils.defaultAbiCoder.encode(
+        ['uint256'],
+        [newProposalCollateral]
+      );
+
+      await adminOpPlugin.updateState(what, value);
+
+      expect(await opPlugin.proposalCollateral()).to.equal(
+        newProposalCollateral
+      );
+    });
+
+    it('should successfully update metaEvidence', async () => {
+      const newMetaEvidence = 'ipfs://NEW_META_EVIDENCE';
+
+      await dao.grant(
+        opPlugin.address,
+        admin.address,
+        CONFIGURE_PARAMETERS_PERMISSION_ID
+      );
+      const adminOpPlugin = opPlugin.connect(admin);
+
+      const what = ethers.utils.formatBytes32String('metaEvidence');
+      const value = ethers.utils.defaultAbiCoder.encode(
+        ['string'],
+        [newMetaEvidence]
+      );
+
+      await adminOpPlugin.updateState(what, value);
+
+      expect(await opPlugin.metaEvidence()).to.equal(newMetaEvidence);
+    });
+
+    it('should successfully update arbitratorExtraData', async () => {
+      const newExtraData = '0x654321';
+
+      await dao.grant(
+        opPlugin.address,
+        admin.address,
+        CONFIGURE_PARAMETERS_PERMISSION_ID
+      );
+      const adminOpPlugin = opPlugin.connect(admin);
+
+      const what = ethers.utils.formatBytes32String('arbitratorExtraData');
+
+      await adminOpPlugin.updateState(what, newExtraData);
+
+      expect(await opPlugin.arbitratorExtraData()).to.equal(newExtraData);
+    });
+
+    it('should revert when called without CONFIGURE_PARAMETERS_PERMISSION_ID', async () => {
+      // Test revert when called without CONFIGURE_PARAMETERS_PERMISSION_ID
+      const newProposalCollateral = 187_000_000;
+
+      const adminOpPlugin = opPlugin.connect(admin);
+
+      const what = ethers.utils.formatBytes32String('proposalCollateral');
+      const value = ethers.utils.defaultAbiCoder.encode(
+        ['uint256'],
+        [newProposalCollateral]
+      );
+
+      await expect(adminOpPlugin.updateState(what, value))
+        .to.be.revertedWithCustomError(adminOpPlugin, 'DaoUnauthorized')
+        .withArgs(
+          dao.address,
+          opPlugin.address,
+          admin.address,
+          CONFIGURE_PARAMETERS_PERMISSION_ID
+        );
+    });
+
+    it('should revert when called with invalid parameter name', async () => {
+      // Test revert when called with invalid parameter name
+      const newMetaEvidence = 'ipfs://NEW_META_EVIDENCE';
+
+      await dao.grant(
+        opPlugin.address,
+        admin.address,
+        CONFIGURE_PARAMETERS_PERMISSION_ID
+      );
+      const adminOpPlugin = opPlugin.connect(admin);
+
+      const what = ethers.utils.formatBytes32String('WTF');
+      const value = ethers.utils.defaultAbiCoder.encode(
+        ['string'],
+        [newMetaEvidence]
+      );
+
+      await expect(adminOpPlugin.updateState(what, value))
+        .to.be.revertedWithCustomError(adminOpPlugin, 'InvalidParameter')
+        .withArgs(what);
+    });
+  });
+
+  describe('createProposal', () => {
+    beforeEach(async () => {
+      await opPlugin.initialize(
+        dao.address,
+        arbitrator.address,
+        DAYS_3,
+        COLLATERAL,
+        META_EVIDENCE,
+        '0x123456'
+      );
+    });
+    it('should successfully create a proposal with valid values', async () => {
+      // Test successful proposal creation with valid values
+      expect(2 + 2).to.equal(5);
+    });
+
+    // it('should revert when called without CREATE_PROPOSAL_PERMISSION_ID', async () => {
+    //   // Test revert when called without CREATE_PROPOSAL_PERMISSION_ID
     //   expect(2 + 2).to.equal(5);
     // });
 
-    // it('should revert when called with invalid parameter name', async () => {
-    //   // Test revert when called with invalid parameter name
+    // it('should revert when _actions is empty', async () => {
+    //   // Test revert when _actions is empty
+    //   expect(2 + 2).to.equal(5);
+    // });
+
+    // it('should revert when not enough collateral is provided', async () => {
+    //   // Test revert when not enough collateral is provided
     //   expect(2 + 2).to.equal(5);
     // });
   });
-
-  // describe('createProposal', () => {
-  //   it('should successfully create a proposal with valid values', async () => {
-  //     // Test successful proposal creation with valid values
-  //     expect(2 + 2).to.equal(5);
-  //   });
-
-  //   it('should revert when called without CREATE_PROPOSAL_PERMISSION_ID', async () => {
-  //     // Test revert when called without CREATE_PROPOSAL_PERMISSION_ID
-  //     expect(2 + 2).to.equal(5);
-  //   });
-
-  //   it('should revert when _actions is empty', async () => {
-  //     // Test revert when _actions is empty
-  //     expect(2 + 2).to.equal(5);
-  //   });
-
-  //   it('should revert when not enough collateral is provided', async () => {
-  //     // Test revert when not enough collateral is provided
-  //     expect(2 + 2).to.equal(5);
-  //   });
-  // });
 
   // describe('_executeArbitrableProposal', () => {
   //   it('should successfully execute an active proposal', async () => {
