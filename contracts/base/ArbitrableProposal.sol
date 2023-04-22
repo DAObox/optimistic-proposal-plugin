@@ -93,7 +93,7 @@ abstract contract ArbitrableProposal is IArbitrableProposal, Proposals, Initiali
         uint256 _proposalCollateral,
         string calldata _metaEvidence,
         bytes calldata _arbitratorExtraData
-    ) internal initializer {
+    ) internal {
         executionDelay = _executionDelay;
         arbitrator = _arbitrator;
         proposalCollateral = _proposalCollateral;
