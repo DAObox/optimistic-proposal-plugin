@@ -1,35 +1,35 @@
+import {Provider} from '@ethersproject/providers';
 import {expect} from 'chai';
 import {ethers} from 'hardhat';
+
 import {
   DAO,
   OptimisticProposalPlugin,
   OptimisticProposalPlugin__factory,
   CentralizedArbitrator,
   CentralizedArbitrator__factory,
+  IDAO,
+  Target__factory,
+  Target,
 } from '../../typechain';
 import {deployTestDao} from '../helpers/test-dao';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {
-  ADDRESS_ZERO,
   ARB_FEE,
   COLLATERAL,
   CONFIGURE_PARAMETERS_PERMISSION_ID,
   CREATE_PROPOSAL_PERMISSION_ID,
   DAYS_3,
-  EMPTY_DATA,
-  EXECUTE_PERMISSION_ID,
   EXTRA_DATA,
-  INIT_ABI,
-  INIT_PARAMS,
   META_EVIDENCE,
-  NO_CONDITION,
-  RULE_PERMISSION_ID,
-  abiCoder,
 } from './common';
-import {deployWithProxy} from '../../utils/helpers';
+import {deployWithProxy, findEvent} from '../../utils/helpers';
+import {ProposalCreatedEvent} from '../../typechain/contracts/OptimisticProposalPlugin';
+import {ProposalStatus} from '../helpers/types';
 
 describe('OptimisticProposalPlugin', () => {
   let signers: SignerWithAddress[];
+  let provider: Provider;
   let deployer: SignerWithAddress;
   let proposer: SignerWithAddress;
   let challenger: SignerWithAddress;
@@ -39,9 +39,12 @@ describe('OptimisticProposalPlugin', () => {
   let opPlugin: OptimisticProposalPlugin;
   let Arbitraror: CentralizedArbitrator__factory;
   let arbitrator: CentralizedArbitrator;
+  let TargetFactory: Target__factory;
+  let target: Target;
 
   before(async () => {
     signers = await ethers.getSigners();
+    provider = ethers.provider;
     deployer = signers[0];
     proposer = signers[1];
     challenger = signers[2];
@@ -53,6 +56,10 @@ describe('OptimisticProposalPlugin', () => {
     arbitrator = await Arbitraror.deploy(ARB_FEE);
     arbitrator.deployed();
     OPPluginFactory = new OptimisticProposalPlugin__factory(deployer);
+
+    TargetFactory = new Target__factory(deployer);
+    target = await TargetFactory.deploy();
+    target.deployed();
   });
 
   beforeEach(async () => {
@@ -295,15 +302,110 @@ describe('OptimisticProposalPlugin', () => {
         '0x123456'
       );
     });
+
     it('should successfully create a proposal with valid values', async () => {
       // Test successful proposal creation with valid values
-      expect(2 + 2).to.equal(5);
+
+      await dao.grant(
+        opPlugin.address,
+        proposer.address,
+        CREATE_PROPOSAL_PERMISSION_ID
+      );
+
+      const data = target.interface.encodeFunctionData('setMessage', [
+        'Test Works!',
+      ]);
+
+      // Create the action object with target contract's address, value, and data
+      const action: IDAO.ActionStruct = {
+        to: target.address,
+        value: 0,
+        data: data,
+      };
+
+      const collateral = await opPlugin.proposalCollateral();
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const metadata = '0x123456';
+      // Create the proposal
+      const createProposalTx = await opPlugin.connect(proposer).createProposal(
+        metadata,
+        [action],
+        0, // _allowFailureMap
+        {value: collateral.add(fee)}
+      );
+
+      // get the block timestamp
+      createProposalTx.timestamp;
+
+      const timestamp = (await provider.getBlock(createProposalTx.blockNumber!))
+        ?.timestamp as number;
+
+      // Verify the proposal creation event is emitted
+      await expect(createProposalTx)
+        .to.emit(opPlugin, 'CollateralDeposited')
+        .withArgs(proposer.address, collateral.add(fee));
+
+      const proposalEvent = (await findEvent<ProposalCreatedEvent>(
+        createProposalTx,
+        'ProposalCreated'
+      )) as ProposalCreatedEvent;
+      expect(proposalEvent.args.proposalId).to.equal(1);
+      expect(proposalEvent.args.creator).to.equal(proposer.address);
+      expect(proposalEvent.args.executionFromTime).to.equal(
+        DAYS_3.add(timestamp)
+      );
+      expect(proposalEvent.args.proposerCollateral).to.equal(collateral);
+      expect(proposalEvent.args.metadata).to.equal(metadata);
+      expect(proposalEvent.args.actions[0].to).to.equal(action.to);
+      expect(proposalEvent.args.actions[0].value).to.equal(action.value);
+      expect(proposalEvent.args.actions[0].data).to.equal(action.data);
+      expect(proposalEvent.args.allowFailureMap).to.equal(0);
+
+      // Verify the proposal state in the contract
+      const proposal = await opPlugin.getProposal(1);
+      expect(proposal.status).to.equal(ProposalStatus.Active);
+      expect(proposal.metadata).to.equal(metadata);
+      expect(proposal.actions[0].to).to.equal(action.to);
+      expect(proposal.actions[0].data).to.equal(action.data);
+      expect(proposal.actions[0].value).to.equal(action.value);
     });
 
-    // it('should revert when called without CREATE_PROPOSAL_PERMISSION_ID', async () => {
-    //   // Test revert when called without CREATE_PROPOSAL_PERMISSION_ID
-    //   expect(2 + 2).to.equal(5);
-    // });
+    it('should revert when called without CREATE_PROPOSAL_PERMISSION_ID', async () => {
+      // Test revert when called without CREATE_PROPOSAL_PERMISSION_ID
+
+      const data = target.interface.encodeFunctionData('setMessage', [
+        'Test Works!',
+      ]);
+
+      const action: IDAO.ActionStruct = {
+        to: target.address,
+        value: 0,
+        data: data,
+      };
+
+      const plugin = opPlugin.connect(proposer);
+
+      const collateral = await plugin.proposalCollateral();
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const value = collateral.add(fee);
+      const metadata = '0x123456';
+
+      // console.log({
+      //   dao: dao.address,
+      //   plugin: plugin.address,
+      //   proposer: proposer.address,
+      //   CREATE_PROPOSAL_PERMISSION_ID,
+      // });
+
+      await expect(plugin.createProposal(metadata, [action], 0, {value}))
+        .to.be.revertedWithCustomError(plugin, 'DaoUnauthorized')
+        .withArgs(
+          dao.address,
+          plugin.address,
+          proposer.address,
+          CREATE_PROPOSAL_PERMISSION_ID
+        );
+    });
 
     // it('should revert when _actions is empty', async () => {
     //   // Test revert when _actions is empty
