@@ -1,4 +1,3 @@
-import {beforeEach} from 'mocha';
 import {
   DAO,
   OptimisticProposalSetup,
@@ -10,17 +9,14 @@ import {
 import {deployTestDao} from '../helpers/test-dao';
 import {Operation} from '../helpers/types';
 import {
-  ADDRESS_ZERO,
   ARB_FEE,
   COLLATERAL,
   CONFIGURE_PARAMETERS_PERMISSION_ID,
   CREATE_PROPOSAL_PERMISSION_ID,
   DAYS_3,
-  EMPTY_DATA,
   EXECUTE_PERMISSION_ID,
   EXTRA_DATA,
   INIT_ABI,
-  INIT_PARAMS,
   META_EVIDENCE,
   NO_CONDITION,
   RULE_PERMISSION_ID,
@@ -59,13 +55,11 @@ describe('OptimisticProposalSetup', function () {
       META_EVIDENCE,
       EXTRA_DATA,
     ];
-    console.log('initParams', initParams);
   });
 
   describe('prepareInstallation', async () => {
     let initData: string;
     before(async () => {
-      console.log('INIT_ABI', INIT_ABI);
       initData = abiCoder.encode(INIT_ABI, initParams);
     });
 
@@ -133,22 +127,6 @@ describe('OptimisticProposalSetup', function () {
     });
   });
 
-  // describe('testDescribe', async () => {
-  //   let initData: string;
-  //   const initParams = [
-  //     '0x47d80912400ef8f8224531EBEB1ce8f2ACf4b75a',
-  //     ...INIT_PARAMS,
-  //   ];
-
-  //   before(async () => {
-  //     initData = abiCoder.encode(initParams, INIT_ABI);
-  //   });
-
-  //   it('mock1', async () => {
-  //     expect(0).equal(0);
-  //   });
-  // });
-
   // describe('prepareUninstallation', async () => {
   //   it('returns the permissions', async () => {
   //     const dummyAddr = ADDRESS_ZERO;
@@ -165,11 +143,32 @@ describe('OptimisticProposalSetup', function () {
   //     expect(permissions.length).to.be.equal(1);
   //     expect(permissions).to.deep.equal([
   //       [
-  //         Operation.Revoke,
-  //         dummyAddr,
-  //         dao.address,
+  //         Operation.Grant,
+  //         plugin,
+  //         arbitrator.address,
   //         NO_CONDITION,
   //         RULE_PERMISSION_ID,
+  //       ],
+  //       [
+  //         Operation.Grant,
+  //         plugin,
+  //         dao.address,
+  //         NO_CONDITION,
+  //         CREATE_PROPOSAL_PERMISSION_ID,
+  //       ],
+  //       [
+  //         Operation.Grant,
+  //         plugin,
+  //         dao.address,
+  //         NO_CONDITION,
+  //         CONFIGURE_PARAMETERS_PERMISSION_ID,
+  //       ],
+  //       [
+  //         Operation.Grant,
+  //         dao.address,
+  //         plugin,
+  //         NO_CONDITION,
+  //         EXECUTE_PERMISSION_ID,
   //       ],
   //     ]);
   //   });
