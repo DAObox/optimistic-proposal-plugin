@@ -50,7 +50,7 @@ describe('Optimistic Proposal Integration', function () {
 
     // Create the plugin repo
 
-    pluginRepo = await populateSimpleStoragePluginRepo(
+    pluginRepo = await populatePluginRepo(
       signers[0],
       osxContracts.goerli.PluginRepoFactory,
       'optimistic-proposal',
@@ -129,7 +129,7 @@ describe('Optimistic Proposal Integration', function () {
   });
 });
 
-export async function populateSimpleStoragePluginRepo(
+export async function populatePluginRepo(
   signer: SignerWithAddress,
   pluginRepoFactory: string,
   repoEnsName: string,
