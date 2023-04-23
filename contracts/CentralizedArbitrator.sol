@@ -42,6 +42,7 @@ contract CentralizedArbitrator is IArbitrator {
      */
     constructor(uint _arbitrationPrice) {
         arbitrationPrice = _arbitrationPrice;
+        disputeId = 1;
     }
 
     /** @dev Set the arbitration price. Only callable by the owner.

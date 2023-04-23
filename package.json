@@ -18,10 +18,11 @@
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-etherscan": "^3.1.7",
     "@trivago/prettier-plugin-sort-imports": "^4.0.0",
-    "@typechain/ethers-v5": "^10.1.1",
-    "@typechain/hardhat": "^6.1.4",
+    "@typechain/ethers-v5": "^10.2.0",
+    "@typechain/hardhat": "^6.1.5",
     "@types/chai": "^4.3.4",
     "@types/fs-extra": "^9.0.13",
+    "@types/listr": "^0.14.4",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.11.9",
     "@typescript-eslint/eslint-plugin": "^5.44.0",
@@ -58,6 +59,8 @@
     "@openzeppelin/contracts": "^4.8.2",
     "@openzeppelin/contracts-upgradeable": "^4.8.2",
     "@openzeppelin/hardhat-upgrades": "^1.21.0",
+    "listr": "^0.14.3",
+    "picocolors": "^1.0.0",
     "web3.storage": "^4.5.4"
   },
   "files": [
