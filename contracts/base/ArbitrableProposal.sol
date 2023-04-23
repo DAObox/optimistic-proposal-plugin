@@ -147,19 +147,20 @@ abstract contract ArbitrableProposal is IArbitrableProposal, Proposals, Initiali
     function _executeArbitrableProposal(
         IDAO _dao,
         uint256 _proposalId
-    ) external virtual returns (bytes[] memory execResults, uint256 failureMap) {
+    ) internal returns (bytes[] memory execResults, uint256 failureMap) {
         ProposalDetails memory proposal = getProposal(_proposalId);
 
         // Check if the proposal status is Active and current timestamp is greater than or equal to executionFromTime
         if (
             proposal.status != ProposalStatus.Active || block.timestamp < proposal.executionFromTime
-        )
+        ) {
             revert ProposalNotExecutable({
                 currentTime: block.timestamp,
                 executionFromTime: proposal.executionFromTime,
                 status: proposal.status
             });
-
+        }
+        _updateProposal(_proposalId, "status", abi.encode(ProposalStatus.Executed));
         (execResults, failureMap) = _executeProposal(_dao, _proposalId);
     }
 
@@ -169,7 +170,7 @@ abstract contract ArbitrableProposal is IArbitrableProposal, Proposals, Initiali
 
         // 2. Ensure the proposal is active or ruled allowed
         if (
-            proposal.status != ProposalStatus.Active ||
+            proposal.status != ProposalStatus.Active &&
             proposal.status != ProposalStatus.RuledAllowed
         ) revert ProposalNotActive(proposal.status);
 
@@ -213,12 +214,13 @@ abstract contract ArbitrableProposal is IArbitrableProposal, Proposals, Initiali
             arbitratorExtraData
         );
 
-        if (disputedProposals[disputeId] == 0)
-            revert DisputeAlreadyCreated({
-                disputeId: disputeId,
-                proposalId: disputedProposals[disputeId]
-            });
-
+        // TODO: ***THIS IS NOT STRICTLY TRUE, BUT IT IS A GOOD ASSUMPTION FOR NOW***
+        // if (disputedProposals[disputeId] != 0) {
+        //     revert DisputeAlreadyCreated({
+        //         disputeId: disputeId,
+        //         proposalId: disputedProposals[disputeId]
+        //     });
+        // }
         // 6. Map the disputeId to the proposalId
         disputedProposals[disputeId] = _proposalId;
 
@@ -234,22 +236,22 @@ abstract contract ArbitrableProposal is IArbitrableProposal, Proposals, Initiali
         emit ProposalDisputed(_proposalId, disputeId, msg.sender);
     }
 
-    function _submitEvidence(uint256 _disputeId, string memory _evidence) external {
+    function submitEvidence(uint256 _disputeId, string memory _evidence) external {
         // 1. Get the proposal
         uint256 proposalId = disputedProposals[_disputeId];
         ProposalDetails memory proposal = getProposal(proposalId);
 
         // 2. if msg.sender is not the proposer or challenger, revert
-        if (msg.sender != proposal.proposer || msg.sender != proposal.challenger)
+        if (msg.sender != proposal.proposer && msg.sender != proposal.challenger) {
             revert NotProposerOrChallenger({
                 proposer: proposal.proposer,
                 challenger: proposal.challenger,
                 caller: msg.sender
             });
-
+        }
         // 3. if there is no dispute or the dispute is resolved, revert
         if (
-            proposal.disputeStatus == DisputeStatus.NoDispute ||
+            proposal.disputeStatus == DisputeStatus.NoDispute &&
             proposal.disputeStatus == DisputeStatus.Resolved
         ) revert CanNotSubmitEvidence({disputeStatus: proposal.disputeStatus});
 

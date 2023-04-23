@@ -71,6 +71,12 @@ contract OptimisticProposalPlugin is ArbitrableProposal, IMembership, PluginUUPS
         _createArbitrableProposal(_metadata, _actions, _allowFailureMap);
     }
 
+    function executeProposal(
+        uint256 _proposalId
+    ) external returns (bytes[] memory execResults, uint256 failureMap) {
+        (execResults, failureMap) = _executeArbitrableProposal(dao(), _proposalId);
+    }
+
     /// @notice Provides a ruling for the specified dispute with the given ruling value (`_disputeID`, `_ruling`)
     /// @dev This function requires RULE_PERMISSION_ID authorization and provides a ruling for the given dispute.
     /// @param _disputeID The ID of the dispute to rule on
