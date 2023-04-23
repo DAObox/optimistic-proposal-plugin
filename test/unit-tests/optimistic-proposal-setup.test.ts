@@ -122,9 +122,6 @@ describe('OptimisticProposalSetup', function () {
       expect(await opPlugin.arbitratorExtraData()).to.be.eq(EXTRA_DATA);
       expect(await opPlugin.metaEvidence()).to.be.eq(META_EVIDENCE);
     });
-    it('this should work but dosnt', async () => {
-      expect(0).equal(0);
-    });
   });
 
   // describe('prepareUninstallation', async () => {

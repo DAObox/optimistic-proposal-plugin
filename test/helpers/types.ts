@@ -16,3 +16,9 @@ export const ProposalStatus = {
   RuledRejected: 4,
   Executed: 5,
 };
+
+export const DisputeStatus = {
+  NoDispute: 0,
+  DisputeCreated: 1,
+  Resolved: 2,
+};

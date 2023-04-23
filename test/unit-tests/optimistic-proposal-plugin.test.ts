@@ -1,6 +1,6 @@
 import {Provider} from '@ethersproject/providers';
 import {expect} from 'chai';
-import {ethers} from 'hardhat';
+import hre, {ethers} from 'hardhat';
 
 import {
   DAO,
@@ -20,12 +20,23 @@ import {
   CONFIGURE_PARAMETERS_PERMISSION_ID,
   CREATE_PROPOSAL_PERMISSION_ID,
   DAYS_3,
+  EXECUTE_PERMISSION_ID,
   EXTRA_DATA,
   META_EVIDENCE,
+  abiCoder,
 } from './common';
 import {deployWithProxy, findEvent} from '../../utils/helpers';
-import {ProposalCreatedEvent} from '../../typechain/contracts/OptimisticProposalPlugin';
-import {ProposalStatus} from '../helpers/types';
+import {
+  EvidenceEvent,
+  ProposalCanceledEvent,
+  ProposalCreatedEvent,
+  ProposalDisputedEvent,
+  ProposalExecutedEvent,
+} from '../../typechain/contracts/OptimisticProposalPlugin';
+import {DisputeStatus, ProposalStatus} from '../helpers/types';
+import {plugin} from '../../typechain/@aragon/osx/core';
+import exp from 'constants';
+import {BigNumber} from 'ethers';
 
 describe('OptimisticProposalPlugin', () => {
   let signers: SignerWithAddress[];
@@ -34,6 +45,7 @@ describe('OptimisticProposalPlugin', () => {
   let proposer: SignerWithAddress;
   let challenger: SignerWithAddress;
   let admin: SignerWithAddress;
+  let rando: SignerWithAddress;
   let dao: DAO;
   let OPPluginFactory: OptimisticProposalPlugin__factory;
   let opPlugin: OptimisticProposalPlugin;
@@ -49,6 +61,7 @@ describe('OptimisticProposalPlugin', () => {
     proposer = signers[1];
     challenger = signers[2];
     admin = signers[3];
+    rando = signers[4];
 
     dao = await deployTestDao(deployer);
 
@@ -407,89 +420,470 @@ describe('OptimisticProposalPlugin', () => {
         );
     });
 
-    // it('should revert when _actions is empty', async () => {
-    //   // Test revert when _actions is empty
-    //   expect(2 + 2).to.equal(5);
-    // });
+    it('should revert when _actions is empty', async () => {
+      // Test revert when _actions is empty
+      await dao.grant(
+        opPlugin.address,
+        proposer.address,
+        CREATE_PROPOSAL_PERMISSION_ID
+      );
 
-    // it('should revert when not enough collateral is provided', async () => {
-    //   // Test revert when not enough collateral is provided
-    //   expect(2 + 2).to.equal(5);
-    // });
+      const plugin = opPlugin.connect(proposer);
+
+      const collateral = await plugin.proposalCollateral();
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const value = collateral.add(fee);
+      const metadata = '0x123456';
+
+      await expect(
+        plugin.createProposal(metadata, [], 0, {value})
+      ).to.be.revertedWithCustomError(plugin, 'NoActions');
+    });
+
+    it('should revert when not enough collateral is provided', async () => {
+      const data = target.interface.encodeFunctionData('setMessage', [
+        'Test Works!',
+      ]);
+      await dao.grant(
+        opPlugin.address,
+        proposer.address,
+        CREATE_PROPOSAL_PERMISSION_ID
+      );
+
+      const action: IDAO.ActionStruct = {
+        to: target.address,
+        value: 0,
+        data: data,
+      };
+
+      const plugin = opPlugin.connect(proposer);
+
+      const collateral = await plugin.proposalCollateral();
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const value = collateral.add(fee);
+      const metadata = '0x123456';
+
+      await expect(plugin.createProposal(metadata, [action], 0, {value: 0}))
+        .to.be.revertedWithCustomError(plugin, 'NotEnoughCollateral')
+        .withArgs(value, 0);
+    });
   });
 
-  // describe('_executeArbitrableProposal', () => {
-  //   it('should successfully execute an active proposal', async () => {
-  //     // Test successful execution of an active proposal
-  //     expect(2 + 2).to.equal(5);
-  //   });
+  describe('_executeArbitrableProposal', () => {
+    beforeEach(async () => {
+      await opPlugin.initialize(
+        dao.address,
+        arbitrator.address,
+        DAYS_3,
+        COLLATERAL,
+        META_EVIDENCE,
+        '0x123456'
+      );
 
-  //   it('should revert when proposal is not active', async () => {
-  //     // Test revert when proposal is not active
-  //     expect(2 + 2).to.equal(5);
-  //   });
+      await dao.grant(dao.address, opPlugin.address, EXECUTE_PERMISSION_ID);
+    });
 
-  //   it('should revert when trying to execute before executionFromTime', async () => {
-  //     // Test revert when trying to execute before executionFromTime
-  //     expect(2 + 2).to.equal(5);
-  //   });
-  // });
+    it('should successfully execute an active proposal', async () => {
+      await dao.grant(
+        opPlugin.address,
+        proposer.address,
+        CREATE_PROPOSAL_PERMISSION_ID
+      );
 
-  // describe('cancelProposal', () => {
-  //   it('should successfully cancel a proposal by proposer', async () => {
-  //     // Test successful proposal cancellation by proposer
-  //     expect(2 + 2).to.equal(5);
-  //   });
+      const data = target.interface.encodeFunctionData('setMessage', [
+        'Test Works!',
+      ]);
 
-  //   it('should revert when caller is not proposer', async () => {
-  //     // Test revert when caller is not proposer
-  //     expect(2 + 2).to.equal(5);
-  //   });
+      // Create the action object with target contract's address, value, and data
+      const action: IDAO.ActionStruct = {
+        to: target.address,
+        value: 0,
+        data: data,
+      };
 
-  //   it('should revert when status is not Active or RuledAllowed', async () => {
-  //     // Test revert when status is not Active or RuledAllowed
-  //     expect(2 + 2).to.equal(5);
-  //   });
-  // });
+      const plugin = opPlugin.connect(proposer);
 
-  // describe('challengeProposal', () => {
-  //   it('should successfully challenge a proposal with valid values', async () => {
-  //     // Test successful proposal challenge with valid values
-  //     expect(2 + 2).to.equal(5);
-  //   });
+      const collateral = await plugin.proposalCollateral();
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const metadata = '0x123456';
+      // Create the proposal
+      const createProposalTx = await plugin.createProposal(
+        metadata,
+        [action],
+        0, // _allowFailureMap
+        {value: collateral.add(fee)}
+      );
 
-  //   it('should revert when proposal is not active', async () => {
-  //     // Test revert when proposal is not active
-  //     expect(2 + 2).to.equal(5);
-  //   });
+      // get the block timestamp
+      createProposalTx.timestamp;
 
-  //   it('should revert when not enough arbitration fee is provided', async () => {
-  //     // Test revert when not enough arbitration fee is provided
-  //     expect(2 + 2).to.equal(5);
-  //   });
+      const timestamp = (await provider.getBlock(createProposalTx.blockNumber!))
+        ?.timestamp as number;
 
-  //   it('should revert when dispute has already been created', async () => {
-  //     // Test revert when dispute has already been created
-  //     expect(2 + 2).to.equal(5);
-  //   });
-  // });
+      // console.log({timestamp});
 
-  // describe('_submitEvidence', () => {
-  //   it('should successfully submit evidence by proposer or challenger', async () => {
-  //     // Test successful evidence submission by proposer or challenger
-  //     expect(2 + 2).to.equal(5);
-  //   });
+      // mine 3 days worth blocks with an interval of 1 minute
+      await hre.network.provider.send('hardhat_mine', ['0x3F480', '0x3c']);
 
-  //   it('should revert when caller is not proposer or challenger', async () => {
-  //     // Test revert when caller is not proposer or challenger
-  //     expect(2 + 2).to.equal(5);
-  //   });
+      // console.log({Efromtime: proposal.executionFromTime.toString()});
 
-  //   it('should revert when dispute status is NoDispute or Resolved', async () => {
-  //     // Test revert when dispute status is NoDispute or Resolved
-  //     expect(2 + 2).to.equal(5);
-  //   });
-  // });
+      // Execute the proposal
+
+      const res = await plugin.callStatic.executeProposal(1);
+      const decodedMessage = abiCoder.decode(['string'], res.execResults[0]);
+
+      expect(decodedMessage[0]).to.equal('Test Works!');
+      expect(res.failureMap).to.equal(ethers.BigNumber.from(0));
+
+      let message = await target.message();
+
+      const executeProposalTx = await plugin.executeProposal(1);
+      const proposal = await opPlugin.getProposal(1);
+      expect(proposal.status).to.equal(ProposalStatus.Executed);
+
+      const proposalEvent = (await findEvent<ProposalExecutedEvent>(
+        executeProposalTx,
+        'ProposalCreated'
+      )) as ProposalExecutedEvent;
+
+      // TODO: Fix this
+      // expect(proposalEvent.args.proposalId).to.equal(1);
+
+      message = await target.message();
+      expect(message).to.equal('Test Works!');
+    });
+
+    it('should revert when trying to execute before executionFromTime', async () => {
+      await dao.grant(
+        opPlugin.address,
+        proposer.address,
+        CREATE_PROPOSAL_PERMISSION_ID
+      );
+
+      const data = target.interface.encodeFunctionData('setMessage', [
+        'Test Works!',
+      ]);
+
+      const action: IDAO.ActionStruct = {
+        to: target.address,
+        value: 0,
+        data: data,
+      };
+
+      const plugin = opPlugin.connect(proposer);
+
+      const collateral = await plugin.proposalCollateral();
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const value = collateral.add(fee);
+      const metadata = '0x123456';
+
+      await plugin.createProposal(metadata, [action], 0, {value});
+
+      const proposal = await opPlugin.getProposal(1);
+      const currentTime = (await provider.getBlock('latest'))?.timestamp;
+      const executeFromTime = proposal.executionFromTime;
+
+      await expect(plugin.executeProposal(1))
+        .to.be.revertedWithCustomError(plugin, 'ProposalNotExecutable')
+        .withArgs(currentTime + 1, executeFromTime, ProposalStatus.Active);
+    });
+  });
+
+  describe('cancelProposal', () => {
+    beforeEach(async () => {
+      await opPlugin.initialize(
+        dao.address,
+        arbitrator.address,
+        DAYS_3,
+        COLLATERAL,
+        META_EVIDENCE,
+        '0x123456'
+      );
+
+      await dao.grant(
+        opPlugin.address,
+        proposer.address,
+        CREATE_PROPOSAL_PERMISSION_ID
+      );
+    });
+    it('should successfully cancel a proposal by proposer', async () => {
+      const data = target.interface.encodeFunctionData('setMessage', [
+        'Test Works!',
+      ]);
+
+      const action: IDAO.ActionStruct = {
+        to: target.address,
+        value: 0,
+        data: data,
+      };
+
+      const plugin = opPlugin.connect(proposer);
+
+      const collateral = await plugin.proposalCollateral();
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const value = collateral.add(fee);
+      const metadata = '0x123456';
+
+      await plugin.createProposal(metadata, [action], 0, {value});
+      const cancelTx = await plugin.cancelProposal(1);
+
+      const proposalEvent = (await findEvent<ProposalCanceledEvent>(
+        cancelTx,
+        'ProposalCanceled'
+      )) as ProposalCanceledEvent;
+
+      expect(proposalEvent.args.proposalId).to.equal(1);
+    });
+
+    it('should revert when caller is not proposer', async () => {
+      const data = target.interface.encodeFunctionData('setMessage', [
+        'Test Works!',
+      ]);
+
+      const action: IDAO.ActionStruct = {
+        to: target.address,
+        value: 0,
+        data: data,
+      };
+
+      let plugin = opPlugin.connect(proposer);
+
+      const collateral = await plugin.proposalCollateral();
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const value = collateral.add(fee);
+      const metadata = '0x123456';
+
+      plugin.createProposal(metadata, [action], 0, {value});
+
+      plugin = opPlugin.connect(rando);
+
+      await expect(plugin.cancelProposal(1))
+        .to.be.revertedWithCustomError(plugin, 'NotProposer')
+        .withArgs(proposer.address, rando.address);
+    });
+
+    it('should revert when status is not Active', async () => {
+      const data = target.interface.encodeFunctionData('setMessage', [
+        'Test Works!',
+      ]);
+
+      await dao.grant(dao.address, opPlugin.address, EXECUTE_PERMISSION_ID);
+
+      const action: IDAO.ActionStruct = {
+        to: target.address,
+        value: 0,
+        data: data,
+      };
+
+      let plugin = opPlugin.connect(proposer);
+
+      const collateral = await plugin.proposalCollateral();
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const value = collateral.add(fee);
+      const metadata = '0x123456';
+
+      await plugin.createProposal(metadata, [action], 0, {value});
+      await hre.network.provider.send('hardhat_mine', ['0x3F480', '0x3c']);
+      await plugin.executeProposal(1);
+
+      await expect(plugin.cancelProposal(1))
+        .to.be.revertedWithCustomError(plugin, 'ProposalNotActive')
+        .withArgs(ProposalStatus.Executed);
+    });
+  });
+
+  describe('challengeProposal', () => {
+    beforeEach(async () => {
+      await opPlugin.initialize(
+        dao.address,
+        arbitrator.address,
+        DAYS_3,
+        COLLATERAL,
+        META_EVIDENCE,
+        '0x123456'
+      );
+
+      await dao.grant(
+        opPlugin.address,
+        proposer.address,
+        CREATE_PROPOSAL_PERMISSION_ID
+      );
+
+      let plugin = opPlugin.connect(proposer);
+
+      const collateral = await plugin.proposalCollateral();
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const value = collateral.add(fee);
+
+      await plugin.createProposal(
+        '0x123456',
+        [
+          {
+            to: target.address,
+            value: 0,
+            data: target.interface.encodeFunctionData('setMessage', [
+              'Test Works!',
+            ]),
+          },
+        ],
+        0,
+        {value}
+      );
+    });
+    it('should successfully challenge a proposal with valid values', async () => {
+      // Test successful proposal challenge with valid values
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const plugin = opPlugin.connect(challenger);
+
+      const disputeTx = await plugin.challengeProposal(1, {value: fee});
+      const proposalEvent = (await findEvent<ProposalDisputedEvent>(
+        disputeTx,
+        'ProposalDisputed'
+      )) as ProposalDisputedEvent;
+
+      const proposal = await opPlugin.getProposal(1);
+
+      expect(proposalEvent.args.proposalId).to.equal(1);
+      expect(proposalEvent.args.challenger).to.equal(challenger.address);
+      expect(proposal.status).to.equal(ProposalStatus.Paused);
+      expect(proposal.disputeStatus).to.equal(DisputeStatus.DisputeCreated);
+      expect(proposal.disputeId).to.equal(proposalEvent.args.disputeId);
+      expect(proposal.challenger).to.equal(challenger.address);
+      expect(proposal.proposerPaidFees).to.equal(fee);
+      expect(proposal.pausedAtTime).to.equal(
+        (await provider.getBlock(disputeTx.blockHash!)).timestamp
+      );
+    });
+
+    it('should revert when dispute has already been created', async () => {
+      // Test revert when dispute has already been created
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const plugin = opPlugin.connect(challenger);
+
+      await plugin.challengeProposal(1, {value: fee});
+      await expect(plugin.challengeProposal(1, {value: fee}))
+        .to.revertedWithCustomError(plugin, 'ProposalNotActive')
+        .withArgs(ProposalStatus.Paused);
+    });
+
+    it('should revert when not enough arbitration fee is provided', async () => {
+      // Test revert when not enough arbitration fee is provided
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const plugin = opPlugin.connect(challenger);
+
+      await expect(plugin.challengeProposal(1, {value: 0}))
+        .to.revertedWithCustomError(plugin, 'InsufficientArbitrationFee')
+        .withArgs(fee, 0);
+    });
+  });
+
+  describe('_submitEvidence', () => {
+    beforeEach(async () => {
+      await opPlugin.initialize(
+        dao.address,
+        arbitrator.address,
+        DAYS_3,
+        COLLATERAL,
+        META_EVIDENCE,
+        '0x123456'
+      );
+
+      await dao.grant(
+        opPlugin.address,
+        proposer.address,
+        CREATE_PROPOSAL_PERMISSION_ID
+      );
+
+      let plugin = opPlugin.connect(proposer);
+
+      const collateral = await plugin.proposalCollateral();
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      const value = collateral.add(fee);
+
+      await plugin.createProposal(
+        '0x123456',
+        [
+          {
+            to: target.address,
+            value: 0,
+            data: target.interface.encodeFunctionData('setMessage', [
+              'Test Works!',
+            ]),
+          },
+        ],
+        0,
+        {value}
+      );
+    });
+    it('should successfully submit evidence by proposer and challenger', async () => {
+      // Test successful evidence submission by proposer or challenger
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      let plugin = opPlugin.connect(challenger);
+      const challangerEvidence = 'https://its.a.trap.com';
+      const proposerEvidence = 'https://snapshot.com/vote/1234';
+
+      await plugin.challengeProposal(1, {value: fee});
+
+      const proposal = await opPlugin.getProposal(1);
+      // console.log(proposal);
+
+      const challangerTx = await plugin.submitEvidence(
+        proposal.disputeId,
+        challangerEvidence
+      );
+      const chalangerEvidenceEvent = (await findEvent<EvidenceEvent>(
+        challangerTx,
+        'Evidence'
+      )) as EvidenceEvent;
+
+      expect(chalangerEvidenceEvent.args._arbitrator).to.equal(
+        arbitrator.address
+      );
+      expect(chalangerEvidenceEvent.args._evidenceGroupID).to.equal(
+        proposal.disputeId
+      );
+      expect(chalangerEvidenceEvent.args._party).to.equal(challenger.address);
+      expect(chalangerEvidenceEvent.args._evidence).to.equal(
+        challangerEvidence
+      );
+
+      plugin = opPlugin.connect(proposer);
+      const proposerTx = await plugin.submitEvidence(
+        proposal.disputeId,
+        proposerEvidence
+      );
+      const proposerEvidenceEvent = (await findEvent<EvidenceEvent>(
+        proposerTx,
+        'Evidence'
+      )) as EvidenceEvent;
+
+      expect(proposerEvidenceEvent.args._arbitrator).to.equal(
+        arbitrator.address
+      );
+      expect(proposerEvidenceEvent.args._evidenceGroupID).to.equal(
+        proposal.disputeId
+      );
+      expect(proposerEvidenceEvent.args._party).to.equal(proposer.address);
+      expect(proposerEvidenceEvent.args._evidence).to.equal(proposerEvidence);
+    });
+
+    it('should revert when caller is not proposer or challenger', async () => {
+      // Test revert when caller is not proposer or challenger
+      const fee = await arbitrator.arbitrationCost(EXTRA_DATA);
+      let plugin = opPlugin.connect(challenger);
+      const challangerEvidence = 'https://its.a.trap.com';
+      await plugin.challengeProposal(1, {value: fee});
+
+      const proposal = await opPlugin.getProposal(1);
+      const randoPlugin = opPlugin.connect(rando);
+
+      await expect(
+        randoPlugin.submitEvidence(proposal.disputeId, challangerEvidence)
+      )
+        .to.revertedWithCustomError(randoPlugin, 'NotProposerOrChallenger')
+        .withArgs(proposer.address, challenger.address, rando.address);
+    });
+  });
 
   // describe('_rule', () => {
   //   it('should successfully rule with valid values', async () => {
@@ -516,23 +910,6 @@ describe('OptimisticProposalPlugin', () => {
 
   //   it('should correctly check for non-member with CREATE_PROPOSAL_PERMISSION_ID', async () => {
   //     // Test non-member check with CREATE_PROPOSAL_PERMISSION_ID
-  //     expect(2 + 2).to.equal(5);
-  //   });
-  // });
-
-  // describe('supportsInterface', () => {
-  //   it('should correctly support DISPUTABLE_PLUGIN_INTERFACE_ID', async () => {
-  //     // Test correct support for DISPUTABLE_PLUGIN_INTERFACE_ID
-  //     expect(2 + 2).to.equal(5);
-  //   });
-
-  //   it('should correctly support IMembership interfaceId', async () => {
-  //     // Test correct support for IMembership interfaceId
-  //     expect(2 + 2).to.equal(5);
-  //   });
-
-  //   it('should correctly support inherited interfaces (PluginUUPSUpgradeable, Proposals)', async () => {
-  //     // Test correct support for inherited interfaces (PluginUUPSUpgradeable, Proposals)
   //     expect(2 + 2).to.equal(5);
   //   });
   // });
