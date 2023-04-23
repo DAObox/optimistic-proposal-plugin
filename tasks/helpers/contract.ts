@@ -4,6 +4,8 @@ import {
   PluginRepoFactory__factory,
   activeContractsList,
 } from '@aragon/osx-ethers';
+import {Interface, LogDescription} from '@ethersproject/abi';
+import {ContractTransaction} from 'ethers';
 
 interface DeployArgs {
   name: string;
@@ -42,3 +44,17 @@ export const repoFactory = async (hre: HardhatRuntimeEnvironment) => {
 
   return PluginRepoFactory__factory.connect(address, deployer);
 };
+
+export async function findEventTopicLog(
+  tx: ContractTransaction,
+  iface: Interface,
+  eventName: string
+): Promise<LogDescription> {
+  const receipt = await tx.wait();
+  const topic = iface.getEventTopic(eventName);
+  const log = receipt.logs.find(x => x.topics.indexOf(topic) >= 0);
+  if (!log) {
+    throw new Error(`No logs found for this event ${eventName} topic.`);
+  }
+  return iface.parseLog(log);
+}
