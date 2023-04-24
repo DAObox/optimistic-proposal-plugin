@@ -81,7 +81,8 @@ task('dao:repo:new', 'Deploy a new Repo for a Plugin')
             setup.address,
             deployer.address,
             toHex(releaseMetadataUri),
-            toHex(buildMetadataUri)
+            toHex(buildMetadataUri),
+            {gasLimit: 1000000}
           );
 
           const eventLog = await findEventTopicLog(
