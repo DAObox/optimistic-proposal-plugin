@@ -13,6 +13,7 @@ import {
   addDeployedContract,
   deploy,
   findEventTopicLog,
+  getNetwork,
   readFile,
 } from '../helpers';
 import {toHex, uploadToIPFS} from '../../utils/ipfs-upload';
@@ -31,16 +32,11 @@ task('dao:repo:new', 'Deploy a new Repo for a Plugin')
   .addParam('repo', `The ENS name of the Repo`)
   .addOptionalParam('metadata', 'The path to the metadata folder')
   .setAction(async (taskArgs, hre: HardhatRuntimeEnvironment) => {
-    const {deployments, network, getNamedAccounts, ethers} = hre;
     const [deployer] = await hre.ethers.getSigners();
     // 1. deploy the setup contract
 
     const metadataPath = taskArgs.metadata ?? './contracts/metadata';
-    const useNetwork = ['localhost', 'hardhat', 'coverage'].includes(
-      network.name
-    )
-      ? 'mainnet'
-      : network.name;
+    const network = getNetwork(hre.network);
 
     const contract = taskArgs.setup;
 
@@ -48,7 +44,7 @@ task('dao:repo:new', 'Deploy a new Repo for a Plugin')
     let releaseMetadataUri: string;
     let setup: Contract;
     let pluginRepoFactoryAddr =
-      activeContractsList[useNetwork as keyof typeof activeContractsList]
+      activeContractsList[network as keyof typeof activeContractsList]
         .PluginRepoFactory;
     const pluginRepoFactory = PluginRepoFactory__factory.connect(
       pluginRepoFactoryAddr,

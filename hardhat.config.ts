@@ -68,6 +68,9 @@ const networks: {[index: string]: NetworkUserConfig} = {
     chainId: 80001,
     url: `${apiUrls.polygonMumbai}${process.env.INFURA_API_KEY}`,
   },
+  daobox: {
+    url: 'https://rpc.vnet.tenderly.co/devnet/daobox-devnet/1fd331b3-09e6-4c01-9715-e52334501318',
+  },
 };
 
 // Uses hardhats private key if none is set. DON'T USE THIS ACCOUNT FOR DEPLOYMENTS

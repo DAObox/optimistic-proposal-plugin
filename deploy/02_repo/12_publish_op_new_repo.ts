@@ -65,7 +65,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     setupR1B1.address,
     deployer.address,
     toHex(releaseMetadataURI),
-    toHex(buildMetadataURI)
+    toHex(buildMetadataURI),
+    {gasLimit: 2000000}
   );
   const eventLog = await findEventTopicLog(
     tx,

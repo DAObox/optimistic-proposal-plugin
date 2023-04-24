@@ -1,4 +1,10 @@
-import {existsSync, readFileSync, statSync, writeFileSync} from 'fs-extra';
+import {
+  existsSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+  pathExists,
+} from 'fs-extra';
 
 export interface ContractList {
   [index: string]: {[index: string]: string};
@@ -49,3 +55,13 @@ export const readFile = (path: string) => {
 
   return content;
 };
+
+export async function getDaoConfig(path: string) {
+  const exists = await pathExists(path);
+  if (!exists) {
+    throw Error(`Error: ${path} does not exist`);
+  } else {
+    const module = await import(path);
+    return module.default;
+  }
+}

@@ -1,11 +1,19 @@
 {
   "goerli": {
-    "OptimisticProposalSetup": "0x61f7B5B849fa5B5eF2d63d24eb07ff3274f5bFDc",
-    "PluginRepo": "0xC91fF79540834575B10515861cC9e350bf0ee1EA",
+    "OptimisticProposalSetup": "0x16550eedC59023d13d2162Ddb38aB3eB0BdF6bd2",
+    "PluginRepo": "0x9B264f74fA43fDF7acE2Fb49473A01089E61a68a",
     "CentralizedArbitrator": "0x3699A8DD940DE8102629AEcF18B3b148fAeB39A6"
   },
   "hardhat": {
     "OptimisticProposalSetup": "0x9368c1f9A0350d4F33807351ad308A2a6bCB695C",
     "PluginRepo": "0x00E0B50f1fb27b03DE3a6608Bb587C8aefd3d69c"
+  },
+  "undefined": {
+    "PluginRepo": "0x00E0B50f1fb27b03DE3a6608Bb587C8aefd3d69c",
+    "OptimisticProposalSetup": "0x5433dC959D979Cd90A1B002F60Cf79603c269FA0"
+  },
+  "daobox": {
+    "OptimisticProposalSetup": "0x5433dC959D979Cd90A1B002F60Cf79603c269FA0",
+    "CentralizedArbitrator": "0x1a205800EA916D38a2B7ED4E32fB82719D72596F"
   }
 }
