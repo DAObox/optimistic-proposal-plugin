@@ -48,6 +48,29 @@ Then, proceed with installing dependencies:
 $ pnpm install
 ```
 
+### DevNet workflow
+
+update the daobox url with the current devnet rpc
+
+```typescript
+
+  daobox: {
+    url: 'https://rpc.vnet.tenderly.co/devnet/daobox-devnet/29a67619-b72a-4100-9dc5-df38289ac388',
+  }
+```
+
+deploy the repo to the devchain
+
+```sh
+npx hardhat dao:repo:new --setup OptimisticProposalSetup --repo op --network daobox
+```
+
+deploy a DAO
+
+```sh
+hh run scripts/opDao.ts --network daobox
+```
+
 ### Compile
 
 Compile the smart contracts with Hardhat:

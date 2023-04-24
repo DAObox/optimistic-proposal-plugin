@@ -14,6 +14,7 @@
   },
   "daobox": {
     "OptimisticProposalSetup": "0x5433dC959D979Cd90A1B002F60Cf79603c269FA0",
-    "CentralizedArbitrator": "0x1a205800EA916D38a2B7ED4E32fB82719D72596F"
+    "CentralizedArbitrator": "0x1a205800EA916D38a2B7ED4E32fB82719D72596F",
+    "PluginRepo": "0x00E0B50f1fb27b03DE3a6608Bb587C8aefd3d69c"
   }
 }

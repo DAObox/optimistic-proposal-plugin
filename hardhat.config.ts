@@ -69,7 +69,7 @@ const networks: {[index: string]: NetworkUserConfig} = {
     url: `${apiUrls.polygonMumbai}${process.env.INFURA_API_KEY}`,
   },
   daobox: {
-    url: 'https://rpc.vnet.tenderly.co/devnet/daobox-devnet/1fd331b3-09e6-4c01-9715-e52334501318',
+    url: 'https://rpc.vnet.tenderly.co/devnet/daobox-devnet/29a67619-b72a-4100-9dc5-df38289ac388',
   },
 };
 

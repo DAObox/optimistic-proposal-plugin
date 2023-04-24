@@ -1,7 +1,14 @@
+import {CentralizedArbitrator} from './../typechain/contracts/CentralizedArbitrator';
 import {ADDRESS_ZERO} from './../test/unit-tests/common';
+import deployedContracts from '../deployed_contracts.json';
 import hre, {ethers} from 'hardhat';
 import config from '../config-dao';
-import {findEventTopicLog, getNetwork, hexToBytes} from '../tasks/helpers';
+import {
+  addDeployedContract,
+  findEventTopicLog,
+  getNetwork,
+  hexToBytes,
+} from '../tasks/helpers';
 import {
   DAOFactory,
   DAOFactory__factory,
@@ -21,17 +28,31 @@ async function main() {
     activeContractsList[network].DAOFactory,
     deployer
   );
+
   const repo = PluginRepo__factory.connect(
-    '0x00e0b50f1fb27b03de3a6608bb587c8aefd3d69c',
+    deployedContracts[hre.network.name].PluginRepo,
     deployer
   );
 
   const currentRelease = await repo.latestRelease();
   const latestVersion = await repo['getLatestVersion(uint8)'](currentRelease);
 
+  // deploy the centralised arbitrato
+  const CentralizedArbitrator = await ethers.getContractFactory(
+    'CentralizedArbitrator',
+    deployer
+  );
+  const arbitrator = await CentralizedArbitrator.deploy(420);
+  await arbitrator.deployed();
+  addDeployedContract(
+    hre.network.name,
+    'CentralizedArbitrator',
+    arbitrator.address
+  );
+
   const deployemnt = defaultAbiCoder.encode(
     ['address', 'uint256', 'uint256', 'string', 'bytes'],
-    config.initPayload
+    [arbitrator.address, ...config.initPayload]
   );
 
   const installData = {

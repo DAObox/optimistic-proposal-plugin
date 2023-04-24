@@ -99,8 +99,12 @@ task('dao:repo:new', 'Deploy a new Repo for a Plugin')
             deployer
           );
 
-          addDeployedContract(network.name, 'PluginRepo', pluginRepo.address);
-          addDeployedContract(network.name, taskArgs.setup, setup.address);
+          addDeployedContract(
+            hre.network.name,
+            'PluginRepo',
+            pluginRepo.address
+          );
+          addDeployedContract(hre.network.name, taskArgs.setup, setup.address);
         },
       },
     ]);
