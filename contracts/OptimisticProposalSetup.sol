@@ -19,6 +19,9 @@ contract OptimisticProposalSetup is PluginSetup {
     /// @notice The error thrown when the helpers array length is not x.
     error WrongHelpersArrayLength(uint length);
 
+    /// @notice Used to represent any address.
+    address constant ANY_ADDR = address(type(uint160).max);
+
     /// @notice The contract constructor, that deployes the bases.
     constructor() {
         optimisticProposals = new OptimisticProposalPlugin();
@@ -37,8 +40,9 @@ contract OptimisticProposalSetup is PluginSetup {
             uint256 executionDelay,
             uint256 proposalCollateral,
             string memory metaEvidence,
-            bytes memory arbitratorExtraData
-        ) = abi.decode(_data, (IArbitrator, uint256, uint256, string, bytes));
+            bytes memory arbitratorExtraData,
+            address[] memory members
+        ) = abi.decode(_data, (IArbitrator, uint256, uint256, string, bytes, address[]));
 
         // 2. Prepare and deploy plugin proxy.
         plugin = createERC1967Proxy(
@@ -56,9 +60,11 @@ contract OptimisticProposalSetup is PluginSetup {
 
         // 3. Prepare permissions
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](4);
+            memory permissions = new PermissionLib.MultiTargetPermission[](
+                members.length > 0 ? 3 + members.length : 4
+            );
 
-        // Revoke the Arbitrator contract `RULE_PERMISSION_ID` of the plugin.
+        // Grant the Arbitrator contract `RULE_PERMISSION_ID` of the plugin.
         permissions[0] = PermissionLib.MultiTargetPermission(
             PermissionLib.Operation.Grant,
             plugin,
@@ -67,17 +73,8 @@ contract OptimisticProposalSetup is PluginSetup {
             optimisticProposals.RULE_PERMISSION_ID()
         );
 
-        // Grant the DAO contract `CREATE_PROPOSAL_PERMISSION_ID` of the plugin.
-        permissions[1] = PermissionLib.MultiTargetPermission(
-            PermissionLib.Operation.Grant,
-            plugin,
-            address(_dao),
-            PermissionLib.NO_CONDITION,
-            optimisticProposals.CREATE_PROPOSAL_PERMISSION_ID()
-        );
-
         // Grant the DAO contract `CONFIGURE_PARAMETERS_PERMISSION_ID` of the plugin.
-        permissions[2] = PermissionLib.MultiTargetPermission(
+        permissions[1] = PermissionLib.MultiTargetPermission(
             PermissionLib.Operation.Grant,
             plugin,
             address(_dao),
@@ -86,13 +83,36 @@ contract OptimisticProposalSetup is PluginSetup {
         );
 
         // Grant `EXECUTE_PERMISSION` of the DAO to the plugin.
-        permissions[3] = PermissionLib.MultiTargetPermission(
+        permissions[2] = PermissionLib.MultiTargetPermission(
             PermissionLib.Operation.Grant,
             _dao,
             plugin,
             PermissionLib.NO_CONDITION,
             DAO(payable(_dao)).EXECUTE_PERMISSION_ID()
         );
+
+        // If the members array is empty grant ANY_ADDRESS contract `CREATE_PROPOSAL_PERMISSION_ID` of the plugin.
+        // Otherwise, grant each member `CREATE_PROPOSAL_PERMISSION_ID`
+        if (members.length > 0) {
+            for (uint256 i = 0; i < members.length; i++) {
+                permissions[3 + i] = PermissionLib.MultiTargetPermission(
+                    PermissionLib.Operation.Grant,
+                    plugin,
+                    members[i],
+                    PermissionLib.NO_CONDITION,
+                    optimisticProposals.CREATE_PROPOSAL_PERMISSION_ID()
+                );
+            }
+        } else {
+            // Grant ANY_ADDRESS contract `CREATE_PROPOSAL_PERMISSION_ID` of the plugin.
+            permissions[3] = PermissionLib.MultiTargetPermission(
+                PermissionLib.Operation.Grant,
+                plugin,
+                ANY_ADDR,
+                PermissionLib.NO_CONDITION,
+                optimisticProposals.CREATE_PROPOSAL_PERMISSION_ID()
+            );
+        }
 
         preparedSetupData.permissions = permissions;
     }
