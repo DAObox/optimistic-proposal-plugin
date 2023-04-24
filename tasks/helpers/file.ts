@@ -65,3 +65,7 @@ export async function getDaoConfig(path: string) {
     return module.default;
   }
 }
+
+export function getDeployedContracts(): ContractList {
+  return JSON.parse(readFileSync(deployedContractsFilePath, 'utf-8'));
+}

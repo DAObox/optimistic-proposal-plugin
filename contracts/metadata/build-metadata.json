@@ -1,6 +1,6 @@
 {
   "ui": "",
-  "change": "fix errors.",
+  "change": "add an array of initial members. If empty then granted to ANY_ADDRESS",
   "pluginSetupABI": {
     "prepareInstallation": [
       "uint256 number",
@@ -8,7 +8,8 @@
       "uint256 executionDelay",
       "uint256 proposalCollateral",
       "string metaEvidence",
-      "bytes arbitratorExtraData"
+      "bytes arbitratorExtraData",
+      "address[] members"
     ],
     "prepareUpdate": [],
     "prepareUninstallation": ["IArbitrator arbitrator"]

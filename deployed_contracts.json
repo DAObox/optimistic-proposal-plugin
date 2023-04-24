@@ -18,8 +18,8 @@
     "PluginRepo": "0x00E0B50f1fb27b03DE3a6608Bb587C8aefd3d69c"
   },
   "polygon": {
-    "OptimisticProposalSetup": "0x5433dC959D979Cd90A1B002F60Cf79603c269FA0",
+    "OptimisticProposalSetup": "0x52b5765e07d401Cc794c7414B9eC4C9Bb7423785",
     "PluginRepo": "0xaeFCdEfac9635120BfcAbd0ee77cD36356d59dCB",
-    "CentralizedArbitrator": "0xEBbC4fCa76E229A05D58B719dfBdd05B62C025e9"
+    "CentralizedArbitrator": "0xe737966C87940fBb2bA7fa18A78f4Dc93F5f75d0"
   }
 }

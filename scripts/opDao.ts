@@ -53,8 +53,15 @@ async function main() {
   );
 
   const deployemnt = defaultAbiCoder.encode(
-    ['address', 'uint256', 'uint256', 'string', 'bytes'],
-    ['0x1a205800EA916D38a2B7ED4E32fB82719D72596F', ...config.initPayload] // [arbitrator.address, ...config.initPayload]
+    ['address', 'uint256', 'uint256', 'string', 'bytes', 'address[]'],
+    [
+      '0x1a205800EA916D38a2B7ED4E32fB82719D72596F', // arbitrator.address,
+      (60 * 10).toString(), // 10 minutes
+      (1e18).toString(), // 1 BaseToken
+      'https://testing.com',
+      '0x085750',
+      [], // empty members, give EVERYONE permission
+    ] // [arbitrator.address, ...config.initPayload]
   );
 
   const installData = {
@@ -70,12 +77,17 @@ async function main() {
       metadata: toUtf8Bytes(
         `ipfs://${await uploadToIPFS(JSON.stringify(config.metadata))}`
       ),
-      subdomain: 'op-daobox-00', //'optimistic' + Math.floor(Math.random() * 1000000),
+      subdomain: 'op-daobox-01', //'optimistic' + Math.floor(Math.random() * 1000000),
       trustedForwarder: ADDRESS_ZERO,
       daoURI: 'https://daobox.app',
     },
     [installData],
-    {gasLimit: 10000000}
+    // its mad hi on polygon rn
+    {
+      gasLimit: 10000000,
+      maxPriorityFeePerGas: ethers.utils.parseUnits('101', 'gwei'),
+      maxFeePerGas: ethers.utils.parseUnits('450', 'gwei'),
+    }
   );
 
   const txHash = creationTx.hash;
