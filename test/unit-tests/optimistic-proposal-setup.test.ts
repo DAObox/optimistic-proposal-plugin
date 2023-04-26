@@ -9,6 +9,7 @@ import {
 import {deployTestDao} from '../helpers/test-dao';
 import {Operation} from '../helpers/types';
 import {
+  ADDRESS_ANY,
   ARB_FEE,
   COLLATERAL,
   CONFIGURE_PARAMETERS_PERMISSION_ID,
@@ -34,7 +35,7 @@ describe('OptimisticProposalSetup', function () {
   let Arbitraror: CentralizedArbitrator__factory;
   let arbitrator: CentralizedArbitrator;
 
-  let initParams: string[];
+  let initParams: any[];
   let dao: DAO;
 
   before(async () => {
@@ -54,6 +55,7 @@ describe('OptimisticProposalSetup', function () {
       COLLATERAL.toString(),
       META_EVIDENCE,
       EXTRA_DATA,
+      [],
     ];
   });
 
@@ -63,64 +65,69 @@ describe('OptimisticProposalSetup', function () {
       initData = abiCoder.encode(INIT_ABI, initParams);
     });
 
-    it('returns the plugin, helpers, and permissions', async () => {
-      const nonce = await ethers.provider.getTransactionCount(opSetup.address);
-      const anticipatedPluginAddress = ethers.utils.getContractAddress({
-        from: opSetup.address,
-        nonce,
-      });
+    describe('When initial members is empty array', () => {
+      it('grants any address the CREATE_PROPOSAL_PERMISSION_ID permission', async () => {
+        const nonce = await ethers.provider.getTransactionCount(
+          opSetup.address
+        );
+        const anticipatedPluginAddress = ethers.utils.getContractAddress({
+          from: opSetup.address,
+          nonce,
+        });
 
-      const {
-        plugin,
-        preparedSetupData: {helpers, permissions},
-      } = await opSetup.callStatic.prepareInstallation(dao.address, initData);
+        const {
+          plugin,
+          preparedSetupData: {helpers, permissions},
+        } = await opSetup.callStatic.prepareInstallation(dao.address, initData);
 
-      expect(plugin).to.be.equal(anticipatedPluginAddress);
-      expect(helpers.length).to.be.equal(0);
-      expect(permissions.length).to.be.equal(4);
-      expect(permissions).to.deep.equal([
-        [
+        expect(plugin).to.be.equal(anticipatedPluginAddress);
+        expect(helpers.length).to.be.equal(0);
+        expect(permissions.length).to.be.equal(4);
+        expect(permissions[0]).to.deep.equal([
           Operation.Grant,
           plugin,
           arbitrator.address,
           NO_CONDITION,
           RULE_PERMISSION_ID,
-        ],
-        [
-          Operation.Grant,
-          plugin,
-          dao.address,
-          NO_CONDITION,
-          CREATE_PROPOSAL_PERMISSION_ID,
-        ],
-        [
+        ]);
+        expect(permissions[1]).to.deep.equal([
           Operation.Grant,
           plugin,
           dao.address,
           NO_CONDITION,
           CONFIGURE_PARAMETERS_PERMISSION_ID,
-        ],
-        [
+        ]);
+        expect(permissions[2]).to.deep.equal([
           Operation.Grant,
           dao.address,
           plugin,
           NO_CONDITION,
           EXECUTE_PERMISSION_ID,
-        ],
-      ]);
+        ]);
+        expect(permissions[3]).to.deep.equal([
+          Operation.Grant,
+          plugin,
+          ADDRESS_ANY,
+          NO_CONDITION,
+          CREATE_PROPOSAL_PERMISSION_ID,
+        ]);
 
-      await opSetup.prepareInstallation(dao.address, initData);
-      const opPlugin = new OptimisticProposalPlugin__factory(signers[0]).attach(
-        plugin
-      );
+        await opSetup.prepareInstallation(dao.address, initData);
+        const opPlugin = new OptimisticProposalPlugin__factory(
+          signers[0]
+        ).attach(plugin);
 
-      // initialization is correct
-      expect(await opPlugin.dao()).to.eq(dao.address);
-      expect(await opPlugin.proposalCollateral()).to.be.eq(COLLATERAL);
-      expect(await opPlugin.executionDelay()).to.be.eq(DAYS_3);
-      expect(await opPlugin.arbitrator()).to.be.eq(arbitrator.address);
-      expect(await opPlugin.arbitratorExtraData()).to.be.eq(EXTRA_DATA);
-      expect(await opPlugin.metaEvidence()).to.be.eq(META_EVIDENCE);
+        const isMember = await opPlugin.isMember(ADDRESS_ANY);
+        expect(isMember).to.be.true;
+
+        // initialization is correct
+        expect(await opPlugin.dao()).to.eq(dao.address);
+        expect(await opPlugin.proposalCollateral()).to.be.eq(COLLATERAL);
+        expect(await opPlugin.executionDelay()).to.be.eq(DAYS_3);
+        expect(await opPlugin.arbitrator()).to.be.eq(arbitrator.address);
+        expect(await opPlugin.arbitratorExtraData()).to.be.eq(EXTRA_DATA);
+        expect(await opPlugin.metaEvidence()).to.be.eq(META_EVIDENCE);
+      });
     });
   });
 
