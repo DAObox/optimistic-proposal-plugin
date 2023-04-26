@@ -1,26 +1,38 @@
-import { useFetchDao, useFetchDaos } from "@daobox/use-aragon";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { type NextPage } from "next";
 import Head from "next/head";
-import config from "../test-config";
-import { Address, useContractRead } from "wagmi";
-import OptimisticProposalsABI from "~/abi/OptimisticProposalsABI";
 
-const opConfig = {
-  address: config.plugin as Address,
-  abi: OptimisticProposalsABI,
-};
+import { useNewOpProposal } from "~/hooks/write";
+import { BN } from "~/hooks/op-helpers";
+import {
+  useCanCreateOpProposal,
+  useOpSettings,
+  useOpProposal,
+} from "~/hooks/read";
 
 const Home: NextPage = () => {
-  useFetchDao({
-    daoAddressOrEns: config.dao,
+  const { isMember } = useCanCreateOpProposal(
+    "0x47d80912400ef8f8224531EBEB1ce8f2ACf4b75a"
+  );
+
+  const { settings } = useOpSettings();
+  const { proposal } = useOpProposal(1);
+  const { write, error, status } = useNewOpProposal({
+    metadata: "0x00",
+    actions: [
+      {
+        data: "0x00",
+        to: "0x47d80912400ef8f8224531EBEB1ce8f2ACf4b75a",
+        value: BN(420),
+      },
+    ],
+    allowFailureMap: BN(0),
   });
 
-  const { data: isMember, isSuccess } = useContractRead({
-    ...opConfig,
-    functionName: "isMember",
-    args: ["0x47d80912400ef8f8224531EBEB1ce8f2ACf4b75a"],
-  });
+  const handleClick = () => {
+    console.log("<====> BEING CALLED <====>");
+    write?.();
+  };
 
   return (
     <>
@@ -32,10 +44,13 @@ const Home: NextPage = () => {
       <Navbar />
       <div className="hero min-h-screen bg-base-200">
         <div className="mockup-code">
+          <button onClick={() => handleClick()} className="btn-primary btn">
+            OpTx
+          </button>
           <pre data-prefix="$">
             <code>npm i daisyui</code>
           </pre>
-          {isSuccess && (
+          {isMember && (
             <pre data-prefix="$">
               <code>isMember {String(isMember)}</code>
             </pre>
@@ -44,6 +59,8 @@ const Home: NextPage = () => {
           {/* <TerminalLine text={isMember?.toString()} /> */}
         </div>
       </div>
+      {settings && <pre>{JSON.stringify(settings, null, 2)}</pre>}
+      {proposal && <pre>{JSON.stringify(proposal, null, 2)}</pre>}
     </>
   );
 };
