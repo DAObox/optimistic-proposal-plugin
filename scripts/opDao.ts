@@ -55,7 +55,7 @@ async function main() {
   const deployemnt = defaultAbiCoder.encode(
     ['address', 'uint256', 'uint256', 'string', 'bytes', 'address[]'],
     [
-      '0x1a205800EA916D38a2B7ED4E32fB82719D72596F', // arbitrator.address,
+      arbitrator.address,
       (60 * 10).toString(), // 10 minutes
       (1e18).toString(), // 1 BaseToken
       'https://testing.com',
@@ -63,7 +63,7 @@ async function main() {
       ['0x47d80912400ef8f8224531EBEB1ce8f2ACf4b75a'], // empty members, give EVERYONE permission
     ] // [arbitrator.address, ...config.initPayload]
   );
-
+  console.log('deployemnt', deployemnt);
   const installData = {
     pluginSetupRef: {
       pluginSetupRepo: repo.address,
@@ -95,7 +95,7 @@ async function main() {
   await creationTx.wait();
 
   const iface = DAORegistry__factory.connect(ADDRESS_ZERO, deployer).interface;
-  console.log({creationTx});
+
   const {dao, creator, subdomain} = (
     await findEventTopicLog(creationTx, iface, 'DAORegistered')
   ).args;

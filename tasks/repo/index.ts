@@ -12,6 +12,7 @@ import * as pc from 'picocolors';
 import {
   addDeployedContract,
   deploy,
+  deployOpSetup,
   findEventTopicLog,
   getDeployedContracts,
   getNetwork,
@@ -69,7 +70,7 @@ task('dao:repo:new', 'Deploy a new Repo for a Plugin')
       {
         title: `Deploy ${bold(green(contract))} Contract`,
         task: async () => {
-          setup = await deploy({name: contract, hre, log: true});
+          setup = await deploy({name: contract, hre, log: true, verify: true});
         },
       },
       {
@@ -164,7 +165,7 @@ task(
       {
         title: `Deploy ${bold(green(contract))} Contract`,
         task: async () => {
-          setup = await deploy({name: contract, hre, log: true});
+          setup = await deployOpSetup({hre, log: true, verify: true});
         },
       },
       {
@@ -187,6 +188,8 @@ task(
     ]);
 
     await tasks.run().then(async () => {
+      const newVersion = await pluginRepo['getLatestVersion(uint8)'](relese);
+      console.log(newVersion);
       console.log(
         `\n  ⬆️ Upgraded Repo to ${green(italic(relese))}.${green(
           italic(latestVersion.tag.release + 1)

@@ -18,8 +18,9 @@
     "PluginRepo": "0x00E0B50f1fb27b03DE3a6608Bb587C8aefd3d69c"
   },
   "polygon": {
-    "OptimisticProposalSetup": "0x52b5765e07d401Cc794c7414B9eC4C9Bb7423785",
+    "OptimisticProposalSetup": "0x465256EdBe14dEd1E703C1EcA1b143402beF5Cdb",
     "PluginRepo": "0xaeFCdEfac9635120BfcAbd0ee77cD36356d59dCB",
-    "CentralizedArbitrator": "0x43829B9a92C1a30A85AEf63342A404d69fE8482E"
+    "CentralizedArbitrator": "0x58f4dC5d678F4a833171BF0fF9c8F5374F5eC87A",
+    "OptimisticProposalPlugin": "0x4D744513A51Ce60a8cfe6f4E584a27cD0Fb5C415"
   }
 }

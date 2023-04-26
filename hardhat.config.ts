@@ -13,6 +13,9 @@ import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import type {NetworkUserConfig} from 'hardhat/types';
 import {resolve} from 'path';
 import 'solidity-coverage';
+import * as tdly from '@tenderly/hardhat-tenderly';
+tdly.setup();
+tdly.setup({automaticVerifications: false});
 
 import './tasks/index';
 const dotenvConfigPath: string = process.env.DOTENV_CONFIG_PATH || './.env';
@@ -27,7 +30,7 @@ const apiUrls: NetworkNameMapping = {
   arbitrumGoerli: 'https://arbitrumGoerli.infura.io/v3/',
   mainnet: 'https://mainnet.infura.io/v3/',
   goerli: 'https://goerli.infura.io/v3/',
-  polygon: 'https://polygon-mainnet.infura.io/v3',
+  polygon: 'https://polygon-mainnet.infura.io/v3/',
   polygonMumbai: 'https://polygon-mumbai.infura.io/v3/',
 };
 
@@ -68,9 +71,6 @@ const networks: {[index: string]: NetworkUserConfig} = {
     chainId: 80001,
     url: `${apiUrls.polygonMumbai}${process.env.INFURA_API_KEY}`,
   },
-  daobox: {
-    url: 'https://rpc.vnet.tenderly.co/devnet/daobox-devnet/70317041-d271-448c-879f-2aae6c07e1bb',
-  },
 };
 
 // Uses hardhats private key if none is set. DON'T USE THIS ACCOUNT FOR DEPLOYMENTS
@@ -95,8 +95,20 @@ extendEnvironment((hre: HardhatRuntimeEnvironment) => {
   hre.aragonToVerifyContracts = [];
 });
 
+const {DEVNET_RPC_URL} = process.env;
+
+function createDevnet() {
+  return DEVNET_RPC_URL;
+}
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
+  networks: {
+    tenderly_devnet: {
+      url: createDevnet(),
+    },
+    ...networks,
+  },
   etherscan: {
     apiKey: {
       arbitrumOne: process.env.ARBISCAN_API_KEY || '',
@@ -117,7 +129,6 @@ const config: HardhatUserConfig = {
     src: './contracts',
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
   },
-  networks,
   paths: {
     artifacts: './artifacts',
     cache: './cache',

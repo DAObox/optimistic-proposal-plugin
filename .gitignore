@@ -16,3 +16,6 @@ typechain
 .DS_Store
 .pnp.*
 coverage.json
+
+# hardhat-tenderly plugin
+deployments
