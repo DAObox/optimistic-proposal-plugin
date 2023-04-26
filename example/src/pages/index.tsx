@@ -22,13 +22,6 @@ const Home: NextPage = () => {
     args: ["0x47d80912400ef8f8224531EBEB1ce8f2ACf4b75a"],
   });
 
-  const { data: permission } = useContractRead({
-    ...opConfig,
-    functionName: "RULE_PERMISSION_ID",
-  });
-
-  console.log("permission", permission);
-
   return (
     <>
       <Head>

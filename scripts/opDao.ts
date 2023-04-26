@@ -60,7 +60,7 @@ async function main() {
       (1e18).toString(), // 1 BaseToken
       'https://testing.com',
       '0x085750',
-      [], // empty members, give EVERYONE permission
+      ['0x47d80912400ef8f8224531EBEB1ce8f2ACf4b75a'], // empty members, give EVERYONE permission
     ] // [arbitrator.address, ...config.initPayload]
   );
 
@@ -77,7 +77,7 @@ async function main() {
       metadata: toUtf8Bytes(
         `ipfs://${await uploadToIPFS(JSON.stringify(config.metadata))}`
       ),
-      subdomain: 'op-daobox-01', //'optimistic' + Math.floor(Math.random() * 1000000),
+      subdomain: 'op-daobox-' + Math.floor(Math.random() * 1000000),
       trustedForwarder: ADDRESS_ZERO,
       daoURI: 'https://daobox.app',
     },
@@ -85,8 +85,8 @@ async function main() {
     // its mad hi on polygon rn
     {
       gasLimit: 10000000,
-      maxPriorityFeePerGas: ethers.utils.parseUnits('101', 'gwei'),
-      maxFeePerGas: ethers.utils.parseUnits('450', 'gwei'),
+      maxPriorityFeePerGas: ethers.utils.parseUnits('151', 'gwei'),
+      maxFeePerGas: ethers.utils.parseUnits('550', 'gwei'),
     }
   );
 
