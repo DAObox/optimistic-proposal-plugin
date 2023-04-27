@@ -42,7 +42,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-full">
+    <div className="min-h-full flex-col">
       <Navbar navItems={navItems} onNavItemClick={handleNavItemClick} />
       <Main title={getCurrentNavItemName()}>{children}</Main>
     </div>

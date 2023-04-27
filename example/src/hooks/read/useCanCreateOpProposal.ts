@@ -1,7 +1,7 @@
 import { useContractRead } from "wagmi";
 import { opConfig } from "../op-helpers";
 
-export const useCanCreateOpProposal = (address: string) => {
+export const useCanCreateOpProposal = (address?: string) => {
   const {
     data: isMember,
     isSuccess,

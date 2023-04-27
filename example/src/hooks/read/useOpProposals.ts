@@ -7,7 +7,7 @@ export const useOpProposals = ({
   start = 0,
   perPage = 10,
   direction = "decrement",
-}: UseProposalProps) => {
+}: UseProposalProps = {}) => {
   const { count } = useOpProposalsCount();
   const index = count ?? 0;
   let proposals: Array<ProposalDetails | undefined> = [];
