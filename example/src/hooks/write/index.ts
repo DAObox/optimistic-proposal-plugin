@@ -22,10 +22,10 @@ export const useNewOpProposal = ({
     ...opConfig,
     functionName: "createProposal",
     args: [metadata, actions, allowFailureMap],
-    // enabled: !!(metadata && actions && allowFailureMap && collateral),
-    // overrides: {
-    //   value: collateral,
-    // },
+    enabled: !!(metadata && actions && allowFailureMap && collateral),
+    overrides: {
+      value: collateral?.add(420),
+    },
   });
 
   const { data, status, write, error } = useContractWrite({

@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@daobox/use-aragon": "0.0.5-beta.4",
+    "@headlessui/react": "^1.7.14",
+    "@heroicons/react": "^2.0.17",
     "@rainbow-me/rainbowkit": "^0.12.9",
     "daisyui": "^2.51.5",
     "ethers": "^5",

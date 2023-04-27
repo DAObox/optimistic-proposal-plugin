@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import { BigNumber } from "@ethersproject/bignumber/lib/bignumber";
 
 export enum DisputeStatus {
   NoDispute, // No dispute exists for the proposal.
